@@ -55,15 +55,17 @@
       <div class="row"><span>Tryb</span><b class="buy">PAPER TRADING</b></div>
       <div class="row"><span>Strategia</span><b>Trend + momentum</b></div>
       <div class="row"><span>Wejście</span><b>EMA20 &gt; EMA50, RSI 50–68</b></div>
-      <div class="row"><span>Wyjście</span><b>Stop -2,5% / słabnący trend</b></div>
-      <div class="row"><span>Wielkość pozycji</span><b>Do 20% portfela na aktywo</b></div>
+      <div class="row"><span>Wyjście</span><b>Stop -2,5% / take profit +5%</b></div>
+      <div class="row"><span>Ryzyko na transakcję</span><b>Maks. 1% portfela</b></div>
+      <div class="row"><span>Limit pozycji</span><b>Maks. 2 jednocześnie</b></div>
+      <div class="row"><span>Limit straty dziennej</span><b>3% kapitału na start dnia</b></div>
       <div class="row"><span>Opłata symulacyjna</span><b>0,10% / stronę</b></div>
       <div class="btnrow">
         <button class="btn primary" id="refreshBtn">↻ Odśwież i oceń sygnały</button>
         <button class="btn" id="autoBtn">▶ Automatyzacja: WYŁ.</button>
         <button class="btn" id="resetBtn">Reset</button>
       </div>
-      <div class="note">Strategia ocenia wyłącznie zamknięte świece 1h. Po włączeniu automatyzacji skanowanie odbywa się co 5 minut, gdy aplikacja jest otwarta. iPhone może wstrzymać działanie w tle. Każda świeca uruchamia najwyżej jedną ocenę. To symulacja, nie rekomendacja inwestycyjna.</div>
+      <div class="note">Wejścia: zamknięte świece 1h. Stop loss i take profit sprawdzane przy każdym odświeżeniu ceny (co 5 min, gdy aplikacja jest otwarta). Wielkość pozycji wyliczana z ryzyka 1% kapitału i stopu 2,5%, z uwzględnieniem prowizji. Limit 2 pozycji i dziennej straty 3%. iPhone może wstrzymać działanie w tle. To symulacja, nie rekomendacja inwestycyjna.</div>
     </div>
   </section>
 
@@ -81,35 +83,57 @@
 </div>
 <div class="toast" id="toast"></div>
 <script>
-const START=1000, FEE=.001, assets=["BTC","ETH"], symbols={BTC:"BTCUSDT",ETH:"ETHUSDT"};
-const $=id=>document.getElementById(id);
-let state=loadState(), market={}, usdpln=null, busy=false;
-let autoEnabled=localStorage.getItem("cbboruty_auto")==="1";
-function paintAutoButton(){const b=$("autoBtn");if(!b)return;b.textContent=autoEnabled?"Ⅱ Automatyzacja: WŁ.":"▶ Automatyzacja: WYŁ.";b.className=autoEnabled?"btn primary":"btn";$("marketStatus").textContent=autoEnabled?"Automatyczne skanowanie co 5 min (gdy aplikacja jest otwarta).":$("marketStatus").textContent;}
-function loadState(){try{let x=JSON.parse(localStorage.getItem("cbboruty_state"));if(x&&Number.isFinite(x.cash)&&x.positions&&Array.isArray(x.trades))return x}catch(e){}return {cash:START,positions:{},trades:[],lastCandles:{}}}
+const START=1000,FEE=.001,STOP=.025,TAKE=.05,RISK=.01,MAX_POS=2,DAILY_LIMIT=.03;
+const assets=["BTC","ETH"],symbols={BTC:"BTCUSDT",ETH:"ETHUSDT"},$=id=>document.getElementById(id);
+let state=loadState(),market={},busy=false,autoEnabled=localStorage.getItem("cbboruty_auto")==="1";
+function loadState(){try{let x=JSON.parse(localStorage.getItem("cbboruty_state"));if(x&&Number.isFinite(x.cash)&&x.positions&&Array.isArray(x.trades)){x.lastCandles=x.lastCandles||{};return x}}catch(e){}return{cash:START,positions:{},trades:[],lastCandles:{},dayKey:null,dayStartEquity:null}}
 function save(){localStorage.setItem("cbboruty_state",JSON.stringify(state))}
 function money(n){return Number(n||0).toLocaleString("pl-PL",{style:"currency",currency:"PLN"})}
 function num(n,d=2){return Number(n).toLocaleString("pl-PL",{minimumFractionDigits:d,maximumFractionDigits:d})}
 function toast(s){$("toast").textContent=s;$("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",2600)}
-async function getJSON(url){let r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
+function paintAutoButton(){let b=$("autoBtn");b.textContent=autoEnabled?"Ⅱ Automatyzacja: WŁ.":"▶ Automatyzacja: WYŁ.";b.className=autoEnabled?"btn primary":"btn"}
+async function getJSON(url){let r=await fetch(url,{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);return r.json()}
 async function candles(symbol){let a=await getJSON("https://api.binance.com/api/v3/klines?symbol="+symbol+"&interval=1h&limit=120");return a.slice(0,-1).map(x=>({t:x[0],close:+x[4]}))}
-function calc(rows){let e20=null,e50=null,g=0,l=0,prev=null,alpha20=2/21,alpha50=2/51,ag=null,al=null;let vals=[];rows.forEach((r,i)=>{e20=e20===null?r.close:e20+(r.close-e20)*alpha20;e50=e50===null?r.close:e50+(r.close-e50)*alpha50;if(prev!==null){let diff=r.close-prev,up=Math.max(diff,0),dn=Math.max(-diff,0);ag=ag===null?up:ag+(up-ag)/14;al=al===null?dn:al+(dn-al)/14;}prev=r.close;let rsi=al===null?50:al===0?100:100-100/(1+ag/al);vals.push({...r,e20,e50,rsi})});return vals}
-function positionValue(){return Object.entries(state.positions).reduce((s,[a,p])=>s+(market[a]?.pricePLN||p.entry)*p.qty,0)}
-function equity(){return state.cash+positionValue()}
+async function ticker(symbol){let x=await getJSON("https://api.binance.com/api/v3/ticker/price?symbol="+symbol);return+x.price}
+function calc(rows){let e20=null,e50=null,ag=null,al=null,prev=null,out=[];rows.forEach(r=>{e20=e20===null?r.close:e20+(r.close-e20)*2/21;e50=e50===null?r.close:e50+(r.close-e50)*2/51;if(prev!==null){let d=r.close-prev,u=Math.max(d,0),dn=Math.max(-d,0);ag=ag===null?u:ag+(u-ag)/14;al=al===null?dn:al+(dn-al)/14}prev=r.close;let rsi=al===null?50:al===0?100:100-100/(1+ag/al);out.push({t:r.t,e20:e20,e50:e50,rsi:rsi})});return out}
+function posValue(){return Object.keys(state.positions).reduce((s,a)=>s+(market[a]?market[a].pricePLN:state.positions[a].entry)*state.positions[a].qty,0)}
+function equity(){return state.cash+posValue()}
+function dayKey(){let d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()}
+function ensureDay(){let k=dayKey();if(state.dayKey!==k||!Number.isFinite(state.dayStartEquity)){state.dayKey=k;state.dayStartEquity=equity();save()}}
+function dailyLoss(){return state.dayStartEquity>0?Math.max(0,(state.dayStartEquity-equity())/state.dayStartEquity):0}
+function trade(a,side,price,reason){
+ let p=state.positions[a];
+ if(side==="BUY"&&!p){
+  if(Object.keys(state.positions).length>=MAX_POS||dailyLoss()>=DAILY_LIMIT)return false;
+  let riskCash=equity()*RISK,lossUnit=price*STOP+price*FEE+price*(1-STOP)*FEE;
+  let qty=Math.min(riskCash/lossUnit,equity()*.35/price,state.cash/(price*(1+FEE)));
+  if(!Number.isFinite(qty)||qty<=0||qty*price<20)return false;
+  let gross=qty*price,fee=gross*FEE;state.cash-=gross+fee;state.positions[a]={qty:qty,entry:price,openedAt:Date.now()};state.trades.unshift({time:Date.now(),asset:a,side:side,price:price,qty:qty,pnl:null,reason:reason,fee:fee});return true;
+ }
+ if(side==="SELL"&&p){let gross=p.qty*price,fee=gross*FEE,net=gross-fee,pnl=net-p.qty*p.entry;state.cash+=net;state.trades.unshift({time:Date.now(),asset:a,side:side,price:price,qty:p.qty,pnl:pnl,reason:reason,fee:fee});delete state.positions[a];return true}
+ return false;
+}
+function exitCheck(a,row,price,newCandle){let p=state.positions[a];if(!p)return false;if(price<=p.entry*(1-STOP))return trade(a,"SELL",price,"Stop loss -2,5%");if(price>=p.entry*(1+TAKE))return trade(a,"SELL",price,"Take profit +5%");if(newCandle&&(row.e20<row.e50||row.rsi>=75))return trade(a,"SELL",price,"Wyjście techniczne EMA/RSI");return false}
 function render(){
  let eq=equity(),diff=eq-START;$("equity").textContent=money(eq);$("pnl").textContent=money(diff)+" · "+num(diff/START*100)+"%";$("pnl").style.color=diff>=0?"var(--green)":"var(--red)";$("cash").textContent=money(state.cash);$("positions").textContent=Object.keys(state.positions).length;$("tradesCount").textContent=state.trades.length;
- for(let a of assets){let m=market[a];if(m){$(a.toLowerCase()+"Price").textContent=money(m.pricePLN);let sig=m.row.e20>m.row.e50?"EMA trend up":"Trend not confirmed";$(a.toLowerCase()+"Signal").textContent=sig+" · RSI "+num(m.row.rsi,1);$(a.toLowerCase()+"Signal").className="signal "+(m.row.e20>m.row.e50?"good":"")}}
- let ps=Object.entries(state.positions);$("positionsList").innerHTML=ps.length?ps.map(([a,p])=>`<div class="row"><span>${a} · ${num(p.qty,6)} szt.</span><b>${money((market[a]?.pricePLN||p.entry)*p.qty)}<br><small style="color:${((market[a]?.pricePLN||p.entry)-p.entry)>=0?'var(--green)':'var(--red)'}">Wejście ${money(p.entry)} · wynik ${money(((market[a]?.pricePLN||p.entry)-p.entry)*p.qty)}</small></b></div>`).join(""):'<div class="empty">Brak otwartych pozycji.</div>';
- let trs=state.trades.slice(0,30);$("history").innerHTML=trs.length?`<table class="trade"><thead><tr><th>Data</th><th>Aktywo</th><th>Typ</th><th>Cena</th><th>Wynik</th></tr></thead><tbody>${trs.map(t=>`<tr><td>${new Date(t.time).toLocaleString("pl-PL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</td><td>${t.asset}</td><td class="${t.side==='BUY'?'buy':'sell'}">${t.side==='BUY'?'KUPNO':'SPRZEDAŻ'}</td><td>${money(t.price)}</td><td>${t.pnl==null?'—':money(t.pnl)}</td></tr>`).join("")}</tbody></table>`:'<div class="empty">Nie wykonano jeszcze transakcji.</div>';
+ assets.forEach(a=>{let m=market[a];if(m){$(a.toLowerCase()+"Price").textContent=money(m.pricePLN);$(a.toLowerCase()+"Signal").textContent=(m.row.e20>m.row.e50?"EMA trend up":"Trend not confirmed")+" · RSI "+num(m.row.rsi,1)}});
+ let ps=Object.keys(state.positions);$("positionsList").innerHTML=ps.length?ps.map(a=>{let p=state.positions[a],px=market[a]?market[a].pricePLN:p.entry,pct=(px/p.entry-1)*100;return '<div class="row"><span>'+a+' · '+num(p.qty,6)+' szt.</span><b>'+money(px*p.qty)+'<br><small style="color:'+(pct>=0?'var(--green)':'var(--red)')+'">Wejście '+money(p.entry)+' · wynik '+money((px-p.entry)*p.qty)+' ('+num(pct)+'%) · SL '+money(p.entry*(1-STOP))+' · TP '+money(p.entry*(1+TAKE))+'</small></b></div>'}).join(""):'<div class="empty">Brak otwartych pozycji.</div>';
+ let trs=state.trades.slice(0,30);$("history").innerHTML=trs.length?'<table class="trade"><thead><tr><th>Data</th><th>Aktywo</th><th>Typ</th><th>Cena</th><th>Wynik</th></tr></thead><tbody>'+trs.map(t=>'<tr><td>'+new Date(t.time).toLocaleString("pl-PL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+'</td><td>'+t.asset+'</td><td class="'+(t.side==="BUY"?"buy":"sell")+'">'+(t.side==="BUY"?"KUPNO":"SPRZEDAŻ")+'</td><td>'+money(t.price)+'</td><td>'+(t.pnl===null?"—":money(t.pnl))+'</td></tr>').join("")+'</tbody></table>':'<div class="empty">Nie wykonano jeszcze transakcji.</div>';
 }
-function trade(a,side,price,reason){let p=state.positions[a];if(side==="BUY"&&!p){let budget=Math.min(state.cash,equity()*.20);if(budget<20)return;let fee=budget*FEE,qty=(budget-fee)/price;state.cash-=budget;state.positions[a]={qty,entry:price};state.trades.unshift({time:Date.now(),asset:a,side,price,qty,pnl:null,reason,fee});return true}
- if(side==="SELL"&&p){let gross=p.qty*price,fee=gross*FEE,net=gross-fee,pnl=net-p.qty*p.entry;state.cash+=net;state.trades.unshift({time:Date.now(),asset:a,side,price,qty:p.qty,pnl,reason,fee});delete state.positions[a];return true}return false}
-function evaluate(a,row,price,candle){if(state.lastCandles[a]===candle)return false;state.lastCandles[a]=candle;let p=state.positions[a],changed=false;if(p){if(price<=p.entry*.975)changed=trade(a,"SELL",price,"Stop loss -2.5%")||changed;else if(row.e20<row.e50||row.rsi>=75)changed=trade(a,"SELL",price,"Trend/RSI exit")||changed}else if(row.e20>row.e50&&row.rsi>=50&&row.rsi<=68){changed=trade(a,"BUY",price,"EMA20>EMA50, RSI 50-68")||changed}return changed}
-async function refresh(){if(busy)return;busy=true;$("refreshBtn").disabled=true;$("marketStatus").textContent="Pobieranie notowań i analiza…";try{let [fx,c1,c2]=await Promise.all([getJSON("https://api.nbp.pl/api/exchangerates/rates/a/usd/?format=json"),candles(symbols.BTC),candles(symbols.ETH)]);usdpln=fx.rates[0].mid;market={};for(let [a,rows] of [["BTC",c1],["ETH",c2]]){let data=calc(rows),row=data[data.length-1];market[a]={rows,row,pricePLN:row.close*usdpln};}
- let changed=[];for(let a of assets){if(evaluate(a,market[a].row,market[a].pricePLN,market[a].row.t))changed.push(a)}save();render();$("updated").textContent="Aktualizacja "+new Date().toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"});$("marketStatus").textContent=changed.length?"Nowa symulowana transakcja: "+changed.join(", "):"Dane pobrane. Brak nowych zleceń.";if(changed.length)toast("Zapisano wirtualną transakcję: "+changed.join(", "))}catch(e){$("marketStatus").textContent="Błąd pobierania danych: "+e.message+". Sprawdź połączenie i spróbuj ponownie."}finally{busy=false;$("refreshBtn").disabled=false}}
+async function refresh(){
+ if(busy)return;busy=true;$("refreshBtn").disabled=true;$("marketStatus").textContent="Pobieranie notowań i analiza…";
+ try{
+  let vals=await Promise.all([getJSON("https://api.nbp.pl/api/exchangerates/rates/a/usd/?format=json"),candles(symbols.BTC),candles(symbols.ETH),ticker(symbols.BTC),ticker(symbols.ETH)]);
+  let fx=vals[0].rates[0].mid;market={BTC:{rows:vals[1],row:calc(vals[1]).slice(-1)[0],pricePLN:vals[3]*fx},ETH:{rows:vals[2],row:calc(vals[2]).slice(-1)[0],pricePLN:vals[4]*fx}};
+  ensureDay();let changed=[];
+  assets.forEach(a=>{let m=market[a],fresh=state.lastCandles[a]!==m.row.t;if(exitCheck(a,m.row,m.pricePLN,fresh))changed.push(a+" sprzedaż");if(fresh){state.lastCandles[a]=m.row.t;if(!state.positions[a]&&Object.keys(state.positions).length<MAX_POS&&dailyLoss()<DAILY_LIMIT&&m.row.e20>m.row.e50&&m.row.rsi>=50&&m.row.rsi<=68){if(trade(a,"BUY",m.pricePLN,"EMA20>EMA50, RSI 50–68"))changed.push(a+" kupno")}}});
+  save();render();$("updated").textContent="Aktualizacja "+new Date().toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"});let loss=dailyLoss();$("marketStatus").textContent=loss>=DAILY_LIMIT?"Limit dziennej straty 3% osiągnięty — nowe zakupy zablokowane.":changed.length?"Transakcje paper: "+changed.join(", "):"Dane pobrane. Brak nowych zleceń. Dzienna strata: "+num(loss*100)+"% / 3%.";if(changed.length)toast("Wirtualna transakcja: "+changed.join(", "));
+ }catch(e){$("marketStatus").textContent="Błąd pobierania danych: "+e.message+". Sprawdź połączenie."}
+ finally{busy=false;$("refreshBtn").disabled=false}
+}
 $("refreshBtn").addEventListener("click",refresh);
 $("autoBtn").addEventListener("click",()=>{autoEnabled=!autoEnabled;localStorage.setItem("cbboruty_auto",autoEnabled?"1":"0");paintAutoButton();toast(autoEnabled?"Automatyzacja paper trading włączona":"Automatyzacja wyłączona");if(autoEnabled)refresh()});
-$("resetBtn").addEventListener("click",()=>{if(confirm("Czy na pewno wyzerować wirtualny portfel i historię?")){state={cash:START,positions:{},trades:[],lastCandles:{}};save();render();toast("Portfel zresetowany do 1000 zł")}})
+$("resetBtn").addEventListener("click",()=>{if(confirm("Czy na pewno wyzerować wirtualny portfel i historię?")){state={cash:START,positions:{},trades:[],lastCandles:{},dayKey:null,dayStartEquity:null};save();render();toast("Portfel zresetowany do 1000 zł")}});
 render();paintAutoButton();refresh();
 setInterval(()=>{if(autoEnabled&&!document.hidden)refresh()},5*60*1000);
 document.addEventListener("visibilitychange",()=>{if(autoEnabled&&!document.hidden)refresh()});
