@@ -129,7 +129,7 @@
 <script>
 const START=1000,FEE=.001,STOP=.025,TAKE=.05,RISK=.01,MAX_POS=2,DAILY_LIMIT=.03;
 const assets=["BTC","ETH"],symbols={BTC:"BTCUSDT",ETH:"ETHUSDT"},$=id=>document.getElementById(id);
-let state=loadState(),market={},busy=false,autoEnabled=localStorage.getItem("cbboruty_auto")==="1";
+let state=loadState(),market={},busy=false,autoEnabled=localStorage.getItem("cbboruty_auto")===null?true:localStorage.getItem("cbboruty_auto")==="1";
 function loadState(){try{let x=JSON.parse(localStorage.getItem("cbboruty_state"));if(x&&Number.isFinite(x.cash)&&x.positions&&Array.isArray(x.trades)){x.lastCandles=x.lastCandles||{};return x}}catch(e){}return{cash:START,positions:{},trades:[],lastCandles:{},dayKey:null,dayStartEquity:null}}
 function save(){localStorage.setItem("cbboruty_state",JSON.stringify(state))}
 function money(n){return Number(n||0).toLocaleString("pl-PL",{style:"currency",currency:"PLN"})}
@@ -230,7 +230,7 @@ async function refresh(){
   let vals=await Promise.all([getJSON("https://api.nbp.pl/api/exchangerates/rates/a/usd/?format=json"),candles(symbols.BTC),candles(symbols.ETH),ticker(symbols.BTC),ticker(symbols.ETH)]);
   let fx=vals[0].rates[0].mid;market={BTC:{rows:vals[1],row:calc(vals[1]).slice(-1)[0],pricePLN:vals[3]*fx},ETH:{rows:vals[2],row:calc(vals[2]).slice(-1)[0],pricePLN:vals[4]*fx}};
   ensureDay();let changed=[];
-  assets.forEach(a=>{let m=market[a],fresh=state.lastCandles[a]!==m.row.t;if(exitCheck(a,m.row,m.pricePLN,fresh))changed.push(a+" sprzedaż");if(fresh){state.lastCandles[a]=m.row.t;if(!state.positions[a]&&Object.keys(state.positions).length<MAX_POS&&dailyLoss()<DAILY_LIMIT&&m.row.e20>m.row.e50&&m.row.rsi>=50&&m.row.rsi<=68){if(trade(a,"BUY",m.pricePLN,"EMA20>EMA50, RSI 50–68"))changed.push(a+" kupno")}}});
+  assets.forEach(a=>{let m=market[a],fresh=state.lastCandles[a]!==m.row.t;if(exitCheck(a,m.row,m.pricePLN,fresh))changed.push(a+" sprzedaż");if(fresh){state.lastCandles[a]=m.row.t;if(autoEnabled&&!state.positions[a]&&Object.keys(state.positions).length<MAX_POS&&dailyLoss()<DAILY_LIMIT&&m.row.e20>m.row.e50&&m.row.rsi>=50&&m.row.rsi<=68){if(trade(a,"BUY",m.pricePLN,"EMA20>EMA50, RSI 50–68"))changed.push(a+" kupno")}}});
   save();render();$("updated").textContent="Aktualizacja "+new Date().toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"});let loss=dailyLoss();$("marketStatus").textContent=loss>=DAILY_LIMIT?"Limit dziennej straty 3% osiągnięty — nowe zakupy zablokowane.":changed.length?"Transakcje paper: "+changed.join(", "):"Dane pobrane. Brak nowych zleceń. Dzienna strata: "+num(loss*100)+"% / 3%.";if(changed.length)toast("Wirtualna transakcja: "+changed.join(", "));
  }catch(e){$("marketStatus").textContent="Błąd pobierania danych: "+e.message+". Sprawdź połączenie."}
  finally{busy=false;$("refreshBtn").disabled=false}
