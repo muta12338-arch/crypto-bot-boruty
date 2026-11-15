@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Crypto BOT">
-  <meta name="description" content="Crypto BOT boruty — symulator paper trading BTC i ETH.">
+  <meta name="description" content="Crypto BOT boruty — symulator paper trading 10 kryptowalut.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
   <title>Crypto BOT boruty</title>
@@ -55,7 +55,7 @@
     </div>
     <div class="dashgrid" style="margin-top:12px">
       <div class="dashcard">
-        <div class="charthead"><div><div class="sectiontag">Wykres</div><h3 id="chartTitle">Bitcoin · BTC/USDT</h3></div><div class="tabs"><button class="tab active" data-asset="BTC">BTC</button><button class="tab" data-asset="ETH">ETH</button><button class="tab" data-asset="EQUITY">Portfel</button></div></div>
+        <div class="charthead"><div><div class="sectiontag">Wykres</div><h3 id="chartTitle">Bitcoin · BTC/PLN</h3></div><div class="tabs"><button class="tab active" data-asset="BTC">BTC</button><button class="tab" data-asset="ETH">ETH</button><button class="tab" data-asset="SOL">SOL</button><button class="tab" data-asset="XRP">XRP</button><button class="tab" data-asset="ADA">ADA</button><button class="tab" data-asset="LINK">LINK</button><button class="tab" data-asset="LTC">LTC</button><button class="tab" data-asset="DOGE">DOGE</button><button class="tab" data-asset="AVAX">AVAX</button><button class="tab" data-asset="DOT">DOT</button><button class="tab" data-asset="EQUITY">Portfel</button></div></div>
         <div class="chartbox" id="mainChart"><div class="empty">Ładowanie wykresu…</div></div>
         <div class="chartlabels"><span id="chartStart">—</span><span id="chartEnd">Teraz</span></div>
         <div class="tabs" style="margin-top:12px"><button class="tab active" data-period="24">24H</button><button class="tab" data-period="72">3D</button><button class="tab" data-period="120">5D</button></div>
@@ -86,10 +86,7 @@
 
   <section class="section">
     <div class="sectionhead"><h2>Rynek na żywo</h2><small id="updated">Oczekiwanie na dane…</small></div>
-    <div class="coins">
-      <article class="coin"><div class="coinhead"><div class="coinicon">₿</div><div><div class="coinname">Bitcoin</div><div class="coinsym">BTC / USDT</div></div></div><div class="price" id="btcPrice">—</div><div class="signal" id="btcSignal">Pobieranie danych</div></article>
-      <article class="coin eth"><div class="coinhead"><div class="coinicon">◆</div><div><div class="coinname">Ethereum</div><div class="coinsym">ETH / USDT</div></div></div><div class="price" id="ethPrice">—</div><div class="signal" id="ethSignal">Pobieranie danych</div></article>
-    </div>
+    <div class="coins" id="coinsGrid"><div class="empty">Pobieranie notowań 10 kryptowalut…</div></div>
     <div class="status" id="marketStatus"></div>
   </section>
 
@@ -100,8 +97,10 @@
       <div class="row"><span>Strategia</span><b>Trend + momentum</b></div>
       <div class="row"><span>Wejście</span><b>EMA20 &gt; EMA50, RSI 50–68</b></div>
       <div class="row"><span>Wyjście</span><b>Stop -2,5% / take profit +5%</b></div>
-      <div class="row"><span>Ryzyko na transakcję</span><b>Maks. 1% portfela</b></div>
-      <div class="row"><span>Limit pozycji</span><b>Maks. 2 jednocześnie</b></div>
+      <div class="row"><span>Ryzyko na transakcję</span><b>Maks. 1% portfela przy stop loss</b></div>
+      <div class="row"><span>Alokacja pozycji</span><b>Maks. 10% kapitału</b></div>
+      <div class="row"><span>Limit pozycji</span><b>Maks. 10 jednocześnie</b></div>
+      <div class="row"><span>Obserwowane aktywa</span><b>BTC · ETH · SOL · XRP · ADA · LINK · LTC · DOGE · AVAX · DOT</b></div>
       <div class="row"><span>Limit straty dziennej</span><b>3% kapitału na start dnia</b></div>
       <div class="row"><span>Opłata symulacyjna</span><b>0,10% / stronę</b></div>
       <div class="btnrow">
@@ -109,7 +108,7 @@
         <button class="btn" id="autoBtn">▶ Automatyzacja: WYŁ.</button>
         <button class="btn" id="resetBtn">Reset</button>
       </div>
-      <div class="note">Wejścia: zamknięte świece 1h. Stop loss i take profit sprawdzane przy każdym odświeżeniu ceny (co 5 min, gdy aplikacja jest otwarta). Wielkość pozycji wyliczana z ryzyka 1% kapitału i stopu 2,5%, z uwzględnieniem prowizji. Limit 2 pozycji i dziennej straty 3%. iPhone może wstrzymać działanie w tle. To symulacja, nie rekomendacja inwestycyjna.</div>
+      <div class="note">Wejścia: zamknięte świece 1h. Stop loss -2,5%, take profit +5%. Ryzyko modelowane na poziomie maks. 1% kapitału przy stop loss; wartość pojedynczej pozycji nie przekracza 10% kapitału. Maks. 10 otwartych pozycji, limit straty dziennej 3%. iPhone może wstrzymać działanie w tle. To symulacja, nie rekomendacja inwestycyjna.</div>
     </div>
   </section>
 
@@ -123,12 +122,12 @@
     <div class="panel tablewrap" id="history"><div class="empty">Nie wykonano jeszcze transakcji.</div></div>
   </section>
 
-  <div class="footer">Crypto BOT boruty · wersja demonstracyjna 2.2 · cloud dashboard<br>Portfel z GitHub Actions · notowania Kraken · kurs USD/PLN NBP<br>Brak połączenia z kontem giełdowym. Żadne prawdziwe pieniądze nie są używane.</div>
+  <div class="footer">Crypto BOT boruty · wersja demonstracyjna 2.3 · 10 aktywów · cloud dashboard<br>Portfel z GitHub Actions · notowania Kraken · kurs USD/PLN NBP<br>Brak połączenia z kontem giełdowym. Żadne prawdziwe pieniądze nie są używane.</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
-const START=1000,FEE=.001,STOP=.025,TAKE=.05,RISK=.01,MAX_POS=2,DAILY_LIMIT=.03;
-const assets=["BTC","ETH"],symbols={BTC:"BTCUSDT",ETH:"ETHUSDT"},$=id=>document.getElementById(id);
+const START=1000,FEE=.001,STOP=.025,TAKE=.05,RISK=.01,MAX_POS=10,DAILY_LIMIT=.03;
+const assets=["BTC","ETH","SOL","XRP","ADA","LINK","LTC","DOGE","AVAX","DOT"],symbols={},assetNames={BTC:"Bitcoin",ETH:"Ethereum",SOL:"Solana",XRP:"XRP",ADA:"Cardano",LINK:"Chainlink",LTC:"Litecoin",DOGE:"Dogecoin",AVAX:"Avalanche",DOT:"Polkadot"},assetIcons={BTC:"₿",ETH:"◆",SOL:"◎",XRP:"✕",ADA:"₳",LINK:"⬡",LTC:"Ł",DOGE:"Ð",AVAX:"▲",DOT:"●"},$=id=>document.getElementById(id);
 let state=loadState(),market={},busy=false,autoEnabled=localStorage.getItem("cbboruty_auto")===null?true:localStorage.getItem("cbboruty_auto")==="1";
 function loadState(){try{let x=JSON.parse(localStorage.getItem("cbboruty_state"));if(x&&Number.isFinite(x.cash)&&x.positions&&Array.isArray(x.trades)){x.lastCandles=x.lastCandles||{};return x}}catch(e){}return{cash:START,positions:{},trades:[],lastCandles:{},dayKey:null,dayStartEquity:null}}
 function save(){localStorage.setItem("cbboruty_state",JSON.stringify(state))}
@@ -150,7 +149,7 @@ function trade(a,side,price,reason){
  if(side==="BUY"&&!p){
   if(Object.keys(state.positions).length>=MAX_POS||dailyLoss()>=DAILY_LIMIT)return false;
   let riskCash=equity()*RISK,lossUnit=price*STOP+price*FEE+price*(1-STOP)*FEE;
-  let qty=Math.min(riskCash/lossUnit,equity()*.35/price,state.cash/(price*(1+FEE)));
+  let qty=Math.min(riskCash/lossUnit,equity()*.10/price,state.cash/(price*(1+FEE)));
   if(!Number.isFinite(qty)||qty<=0||qty*price<20)return false;
   let gross=qty*price,fee=gross*FEE;state.cash-=gross+fee;state.positions[a]={qty:qty,entry:price,openedAt:Date.now()};state.trades.unshift({time:Date.now(),asset:a,side:side,price:price,qty:qty,pnl:null,reason:reason,fee:fee});return true;
  }
@@ -167,7 +166,7 @@ function winPct(){let t=closedTrades();return t.length?t.filter(x=>x.pnl>0).leng
 function equityCurve(){let v=START,pts=[v];closedTrades().slice().reverse().forEach(t=>{v+=t.pnl||0;pts.push(v)});return pts}
 function drawChart(){
  let box=$("mainChart");if(!box)return;
- let title=chartAsset==="EQUITY"?"Kapitał portfela":chartAsset==="BTC"?"Bitcoin · BTC/PLN":"Ethereum · ETH/PLN";
+ let title=chartAsset==="EQUITY"?"Kapitał portfela":(assetNames[chartAsset]||chartAsset)+" · "+chartAsset+"/PLN";
  let key=chartAsset==="EQUITY"?"equity":chartAsset,cutoff=Date.now()-chartPeriod*60*60*1000;
  let points=(Array.isArray(state.history)?state.history:[]).filter(p=>Number(p.time)>=cutoff&&Number.isFinite(Number(p[key]))).map(p=>({t:Number(p.time),v:Number(p[key])}));
  $("chartTitle").textContent=title;
@@ -195,12 +194,12 @@ function updateAnalyst(){
   rows.push([a,stateText,explanation]);
  });
  let blocked=dailyLoss()>=DAILY_LIMIT,slots=Object.keys(state.positions).length>=MAX_POS,headline,detail;
- if(!market.BTC||!market.ETH){headline="Brak pełnych danych rynkowych. Odśwież notowania.";detail="Analityk nie wydaje oceny bez kompletu danych BTC i ETH."}
+ if(Object.keys(market).length!==assets.length){headline="Brak kompletu danych rynkowych. Odśwież notowania.";detail="Analityk oczekuje na notowania wszystkich 10 aktywów."}
  else if(blocked){headline="Priorytet: ochrona kapitału. Dzienny limit straty został osiągnięty.";detail="Nowe zakupy są blokowane do kolejnego dnia według zegara urządzenia."}
- else if(slots){headline="Portfel wykorzystuje limit dwóch otwartych pozycji. Nowe wejścia są zablokowane.";detail="Najpierw strategia musi zamknąć jedną z obecnych pozycji."}
+ else if(slots){headline="Portfel wykorzystuje limit 10 otwartych pozycji. Nowe wejścia są zablokowane.";detail="Najpierw strategia musi zamknąć jedną z obecnych pozycji."}
  else if(entryReady){headline="Co najmniej jedno aktywo spełnia techniczne warunki wejścia.";detail="To sygnał warunkowy, nie gwarancja wzrostu. Wejście następuje przy ocenie nowej zamkniętej świecy 1h."}
- else if(bull===2){headline="BTC i ETH są w trendzie wzrostowym, ale nie ma pełnego sygnału wejścia.";detail="Strategia czeka na RSI w przedziale 50–68 na zamkniętej świecy godzinowej."}
- else if(bear===2){headline="Oba obserwowane aktywa nie potwierdzają trendu wzrostowego. Najrozsądniej poczekać.";detail="Brak transakcji jest zgodny z zasadą selektywnego handlu."}
+ else if(bull===assets.length){headline="Wszystkie obserwowane aktywa są w trendzie wzrostowym, ale wymagają potwierdzenia RSI.";detail="Strategia czeka na RSI w przedziale 50–68 na zamkniętej świecy godzinowej."}
+ else if(bear===assets.length){headline="Żadne z obserwowanych aktywów nie potwierdza trendu wzrostowego. Najrozsądniej poczekać.";detail="Brak transakcji jest zgodny z zasadą selektywnego handlu."}
  else{headline="Rynek daje mieszane sygnały. Analityk zaleca cierpliwość.";detail="Nie zwiększaj ryzyka tylko po to, aby wymusić transakcję."}
  $("analystSummary").textContent=headline;
  $("analystDetails").innerHTML=rows.map(x=>'<div class="dashitem"><span>'+x[0]+'<br><small>'+x[2]+'</small></span><b>'+x[1]+'</b></div>').join("")+'<div class="dashitem"><span>Ocena ryzyka</span><b class="'+(blocked?"negative":"positive")+'">'+(blocked?"Limit dzienny osiągnięty":"Limity aktywne")+'</b></div><div class="dashitem"><span>Decyzja analityka</span><b>'+((blocked||slots||!entryReady)?"CZEKAJ":"SYGNAŁ WARUNKOWY")+'</b></div>';
@@ -210,7 +209,7 @@ function renderDashboard(){
  $("realizedPnl").textContent=(realized()>=0?"+":"")+money(realized());$("realizedPnl").className=realized()>=0?"positive":"negative";
  $("unrealizedPnl").textContent=(unrealized()>=0?"+":"")+money(unrealized());$("unrealizedPnl").className=unrealized()>=0?"positive":"negative";
  $("winRate").textContent=winPct()===null?"—":num(winPct())+"%";$("feesTotal").textContent=money(allFees());
- let eq=equity(),parts=[["Gotówka",Math.max(0,state.cash)],["Bitcoin",state.positions.BTC?(market.BTC?market.BTC.pricePLN:state.positions.BTC.entry)*state.positions.BTC.qty:0],["Ethereum",state.positions.ETH?(market.ETH?market.ETH.pricePLN:state.positions.ETH.entry)*state.positions.ETH.qty:0]];
+ let eq=equity(),parts=[["Gotówka",Math.max(0,state.cash)],...assets.filter(a=>state.positions[a]).map(a=>[a,(market[a]?market[a].pricePLN:state.positions[a].entry)*state.positions[a].qty])];
  $("allocation").innerHTML=parts.map(p=>'<div class="allocrow"><span class="dashmuted" style="width:70px">'+p[0]+'</span><div class="allocbar"><i style="width:'+Math.max(0,Math.min(100,eq?p[1]/eq*100:0))+'%"></i></div><b>'+num(eq?p[1]/eq*100:0)+'%</b></div>').join("")+'<div class="dashitem"><span>Wartość portfela</span><b>'+money(eq)+'</b></div>';
  let loss=dailyLoss()*100,exposure=eq?posValue()/eq*100:0;
  $("riskPanel").innerHTML='<div class="dashitem"><span>Dzienna strata</span><b class="'+(loss>0?"negative":"positive")+'">'+num(loss)+'% / 3%</b></div><div class="riskline"><i style="width:'+Math.min(100,loss/3*100)+'%"></i></div><div class="dashitem"><span>Ekspozycja w rynku</span><b>'+num(exposure)+'%</b></div><div class="dashitem"><span>Wolne środki</span><b>'+money(state.cash)+'</b></div><div class="dashitem"><span>Wolne miejsca</span><b>'+Math.max(0,MAX_POS-Object.keys(state.positions).length)+' / '+MAX_POS+'</b></div>';
@@ -221,7 +220,7 @@ function renderDashboard(){
 }
 function render(){
  let eq=equity(),diff=eq-START;$("equity").textContent=money(eq);$("pnl").textContent=(diff>=0?"+":"")+money(diff)+" · "+num(diff/START*100)+"%";$("pnl").style.color=diff>=0?"var(--green)":"var(--red)";$("cash").textContent=money(state.cash);$("positions").textContent=Object.keys(state.positions).length;$("tradesCount").textContent=state.trades.length;
- assets.forEach(a=>{let m=market[a];if(m){$(a.toLowerCase()+"Price").textContent=money(m.pricePLN);$(a.toLowerCase()+"Signal").textContent=(m.row.e20>m.row.e50?"EMA trend up":"Trend not confirmed")+" · RSI "+num(m.row.rsi,1)}});
+ $("coinsGrid").innerHTML=assets.map(a=>{let m=market[a],trend=m&&m.row.e20>m.row.e50;return '<article class="coin"><div class="coinhead"><div class="coinicon">'+assetIcons[a]+'</div><div><div class="coinname">'+assetNames[a]+'</div><div class="coinsym">'+a+' / PLN</div></div></div><div class="price">'+(m?money(m.pricePLN):"—")+'</div><div class="signal '+(m&&trend?"good":m?"bad":"")+'">'+(m?(trend?"EMA trend wzrostowy":"Trend niepotwierdzony")+" · RSI "+num(m.row.rsi,1):"Brak danych")+'</div></article>'}).join("");
  let ps=Object.keys(state.positions);$("positionsList").innerHTML=ps.length?ps.map(a=>{let p=state.positions[a],px=market[a]?market[a].pricePLN:p.entry,pct=(px/p.entry-1)*100;return '<div class="row"><span>'+a+' · '+num(p.qty,6)+' szt.</span><b>'+money(px*p.qty)+'<br><small style="color:'+(pct>=0?'var(--green)':'var(--red)')+'">Wejście '+money(p.entry)+' · wynik '+money((px-p.entry)*p.qty)+' ('+num(pct)+'%) · SL '+money(p.entry*(1-STOP))+' · TP '+money(p.entry*(1+TAKE))+'</small></b></div>'}).join(""):'<div class="empty">Brak otwartych pozycji.</div>';
  let trs=state.trades.slice(0,30);$("history").innerHTML=trs.length?'<table class="trade"><thead><tr><th>Data</th><th>Aktywo</th><th>Typ</th><th>Cena</th><th>Wynik</th></tr></thead><tbody>'+trs.map(t=>'<tr><td>'+new Date(t.time).toLocaleString("pl-PL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+'</td><td>'+t.asset+'</td><td class="'+(t.side==="BUY"?"buy":"sell")+'">'+(t.side==="BUY"?"KUPNO":"SPRZEDAŻ")+'</td><td>'+money(t.price)+'</td><td>'+(t.pnl===null?"—":money(t.pnl))+'</td></tr>').join("")+'</tbody></table>':'<div class="empty">Nie wykonano jeszcze transakcji.</div>';
  renderDashboard();
@@ -236,7 +235,7 @@ async function refresh(){
   state={cash:Number(cloud.cash),positions:cloud.positions,trades:cloud.trades,lastCandles:cloud.last_candles||{},history:Array.isArray(cloud.history)?cloud.history:[],dayKey:dayKey(),dayStartEquity:Number(cloud.day_start_equity||START),cloudEnabled:cloud.enabled!==false,lastRun:cloud.last_run,day:cloud.day};
   market={};
   assets.forEach(a=>{let ind=cloud.indicators[a],price=Number(cloud.prices[a]);if(ind&&Number.isFinite(price))market[a]={pricePLN:price,row:{e20:Number(ind.ema20),e50:Number(ind.ema50),rsi:Number(ind.rsi)},rows:[]};});
-  if(!market.BTC||!market.ETH)throw Error("Brak kompletnych danych BTC/ETH");
+  if(Object.keys(market).length!==assets.length)throw Error("Brak kompletnych danych wszystkich 10 aktywów");
   render();$("updated").textContent="Synchronizacja "+new Date().toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"});
   const last=cloud.last_run?new Date(cloud.last_run):null,age=last?Math.max(0,Math.round((Date.now()-last.getTime())/60000)):null;
   const stale=age===null||age>15;
