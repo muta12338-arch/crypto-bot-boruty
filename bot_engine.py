@@ -3,7 +3,7 @@ from datetime import datetime, timezone, date
 
 STATE_FILE = "portfolio-state.json"
 START, FEE, STOP, TAKE, RISK, MAX_POS, DAILY_LIMIT = 1000.0, 0.001, 0.025, 0.05, 0.01, 2, 0.03
-ASSETS = {"BTC":"BTCUSDT", "ETH":"ETHUSDT"}
+ASSETS = {"BTC":"XBTUSD", "ETH":"ETHUSD"}
 
 def get_json(url):
     req=urllib.request.Request(url, headers={"User-Agent":"CryptoBOT-boruty-paper/1.0"})
@@ -35,13 +35,24 @@ def main():
     now=datetime.now(timezone.utc); today=now.date().isoformat()
     fx=get_json("https://api.nbp.pl/api/exchangerates/rates/a/usd/?format=json")["rates"][0]["mid"]
     data={}
-    for asset,symbol in ASSETS.items():
-        candles=get_json(f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval=1h&limit=120")
+    for asset,pair in ASSETS.items():
+        ohlc=get_json(f"https://api.kraken.com/0/public/OHLC?pair={pair}&interval=60")
+        if ohlc.get("error"):
+            raise RuntimeError(f"Kraken OHLC {asset}: {ohlc['error']}")
+        result=ohlc["result"]
+        pair_key=next(k for k in result if k != "last")
+        candles=result[pair_key]
         closed=candles[:-1]
+        if len(closed)<60:
+            raise RuntimeError(f"Za mało zamkniętych świec Kraken dla {asset}")
         closes=[float(c[4]) for c in closed]
-        ticker=float(get_json(f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}")["price"])
+        ticker_data=get_json(f"https://api.kraken.com/0/public/Ticker?pair={pair}")
+        if ticker_data.get("error"):
+            raise RuntimeError(f"Kraken ticker {asset}: {ticker_data['error']}")
+        ticker_key=next(iter(ticker_data["result"]))
+        ticker=float(ticker_data["result"][ticker_key]["c"][0])
         e20,e50,rsi=indicators(closes)
-        data[asset]={"price":ticker*fx,"candle":int(closed[-1][0]),"ema20":e20,"ema50":e50,"rsi":rsi}
+        data[asset]={"price":ticker*fx,"candle":int(closed[-1][0])*1000,"ema20":e20,"ema50":e50,"rsi":rsi}
     def equity():
         return float(s["cash"])+sum(data.get(a,{}).get("price",p["entry"])*p["qty"] for a,p in s["positions"].items())
     if s.get("day") != today:
