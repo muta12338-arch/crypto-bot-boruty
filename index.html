@@ -60,9 +60,10 @@
       <div class="row"><span>Opłata symulacyjna</span><b>0,10% / stronę</b></div>
       <div class="btnrow">
         <button class="btn primary" id="refreshBtn">↻ Odśwież i oceń sygnały</button>
+        <button class="btn" id="autoBtn">▶ Automatyzacja: WYŁ.</button>
         <button class="btn" id="resetBtn">Reset</button>
       </div>
-      <div class="note">Strategia ocenia wyłącznie zamknięte świece 1h. Każda świeca może uruchomić najwyżej jedną ocenę. Symulacja nie jest rekomendacją inwestycyjną.</div>
+      <div class="note">Strategia ocenia wyłącznie zamknięte świece 1h. Po włączeniu automatyzacji skanowanie odbywa się co 5 minut, gdy aplikacja jest otwarta. iPhone może wstrzymać działanie w tle. Każda świeca uruchamia najwyżej jedną ocenę. To symulacja, nie rekomendacja inwestycyjna.</div>
     </div>
   </section>
 
@@ -83,6 +84,8 @@
 const START=1000, FEE=.001, assets=["BTC","ETH"], symbols={BTC:"BTCUSDT",ETH:"ETHUSDT"};
 const $=id=>document.getElementById(id);
 let state=loadState(), market={}, usdpln=null, busy=false;
+let autoEnabled=localStorage.getItem("cbboruty_auto")==="1";
+function paintAutoButton(){const b=$("autoBtn");if(!b)return;b.textContent=autoEnabled?"Ⅱ Automatyzacja: WŁ.":"▶ Automatyzacja: WYŁ.";b.className=autoEnabled?"btn primary":"btn";$("marketStatus").textContent=autoEnabled?"Automatyczne skanowanie co 5 min (gdy aplikacja jest otwarta).":$("marketStatus").textContent;}
 function loadState(){try{let x=JSON.parse(localStorage.getItem("cbboruty_state"));if(x&&Number.isFinite(x.cash)&&x.positions&&Array.isArray(x.trades))return x}catch(e){}return {cash:START,positions:{},trades:[],lastCandles:{}}}
 function save(){localStorage.setItem("cbboruty_state",JSON.stringify(state))}
 function money(n){return Number(n||0).toLocaleString("pl-PL",{style:"currency",currency:"PLN"})}
@@ -105,8 +108,11 @@ function evaluate(a,row,price,candle){if(state.lastCandles[a]===candle)return fa
 async function refresh(){if(busy)return;busy=true;$("refreshBtn").disabled=true;$("marketStatus").textContent="Pobieranie notowań i analiza…";try{let [fx,c1,c2]=await Promise.all([getJSON("https://api.nbp.pl/api/exchangerates/rates/a/usd/?format=json"),candles(symbols.BTC),candles(symbols.ETH)]);usdpln=fx.rates[0].mid;market={};for(let [a,rows] of [["BTC",c1],["ETH",c2]]){let data=calc(rows),row=data[data.length-1];market[a]={rows,row,pricePLN:row.close*usdpln};}
  let changed=[];for(let a of assets){if(evaluate(a,market[a].row,market[a].pricePLN,market[a].row.t))changed.push(a)}save();render();$("updated").textContent="Aktualizacja "+new Date().toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"});$("marketStatus").textContent=changed.length?"Nowa symulowana transakcja: "+changed.join(", "):"Dane pobrane. Brak nowych zleceń.";if(changed.length)toast("Zapisano wirtualną transakcję: "+changed.join(", "))}catch(e){$("marketStatus").textContent="Błąd pobierania danych: "+e.message+". Sprawdź połączenie i spróbuj ponownie."}finally{busy=false;$("refreshBtn").disabled=false}}
 $("refreshBtn").addEventListener("click",refresh);
+$("autoBtn").addEventListener("click",()=>{autoEnabled=!autoEnabled;localStorage.setItem("cbboruty_auto",autoEnabled?"1":"0");paintAutoButton();toast(autoEnabled?"Automatyzacja paper trading włączona":"Automatyzacja wyłączona");if(autoEnabled)refresh()});
 $("resetBtn").addEventListener("click",()=>{if(confirm("Czy na pewno wyzerować wirtualny portfel i historię?")){state={cash:START,positions:{},trades:[],lastCandles:{}};save();render();toast("Portfel zresetowany do 1000 zł")}})
-render();refresh();
+render();paintAutoButton();refresh();
+setInterval(()=>{if(autoEnabled&&!document.hidden)refresh()},5*60*1000);
+document.addEventListener("visibilitychange",()=>{if(autoEnabled&&!document.hidden)refresh()});
 if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
 </script>
 </body></html>
