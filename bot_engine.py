@@ -98,6 +98,9 @@ def main():
     s["last_events"]=events
     s["equity"]=equity()
     s["daily_loss_pct"]=daily_loss()*100
+    history=s.get("history",[])
+    history.append({"time":int(now.timestamp()*1000),"equity":round(s["equity"],2),"BTC":round(data["BTC"]["price"],2),"ETH":round(data["ETH"]["price"],2)})
+    s["history"]=history[-2016:]
     with open(STATE_FILE,"w",encoding="utf-8") as f: json.dump(s,f,ensure_ascii=False,indent=2)
     print(json.dumps({"last_run":s["last_run"],"equity":s["equity"],"cash":s["cash"],"positions":len(s["positions"]),"trades":len(s["trades"]),"events":events},ensure_ascii=False))
 
