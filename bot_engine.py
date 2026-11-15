@@ -2,8 +2,8 @@ import json, os, time, urllib.request
 from datetime import datetime, timezone, date
 
 STATE_FILE = "portfolio-state.json"
-START, FEE, STOP, TAKE, RISK, MAX_POS, DAILY_LIMIT = 1000.0, 0.001, 0.025, 0.05, 0.01, 2, 0.03
-ASSETS = {"BTC":"XBTUSD", "ETH":"ETHUSD"}
+START, FEE, STOP, TAKE, RISK, MAX_POS, DAILY_LIMIT = 1000.0, 0.001, 0.025, 0.05, 0.01, 10, 0.03
+ASSETS = {"BTC":"XBTUSD", "ETH":"ETHUSD", "SOL":"SOLUSD", "XRP":"XRPUSD", "ADA":"ADAUSD", "LINK":"LINKUSD", "LTC":"LTCUSD", "DOGE":"XDGUSD", "AVAX":"AVAXUSD", "DOT":"DOTUSD"}
 
 def get_json(url):
     req=urllib.request.Request(url, headers={"User-Agent":"CryptoBOT-boruty-paper/1.0"})
@@ -84,7 +84,7 @@ def main():
             if s.get("enabled",True) and a not in s["positions"] and len(s["positions"])<MAX_POS and daily_loss()<DAILY_LIMIT and m["ema20"]>m["ema50"] and 50<=m["rsi"]<=68:
                 eq=equity(); risk_cash=eq*RISK
                 unit=m["price"]*STOP+m["price"]*FEE+m["price"]*(1-STOP)*FEE
-                qty=min(risk_cash/unit,eq*.35/m["price"],float(s["cash"])/(m["price"]*(1+FEE)))
+                qty=min(risk_cash/unit,eq*.10/m["price"],float(s["cash"])/(m["price"]*(1+FEE)))
                 if qty>0 and qty*m["price"]>=20:
                     gross=qty*m["price"]; fee=gross*FEE
                     s["cash"]-=gross+fee
@@ -99,7 +99,9 @@ def main():
     s["equity"]=equity()
     s["daily_loss_pct"]=daily_loss()*100
     history=s.get("history",[])
-    history.append({"time":int(now.timestamp()*1000),"equity":round(s["equity"],2),"BTC":round(data["BTC"]["price"],2),"ETH":round(data["ETH"]["price"],2)})
+    sample={"time":int(now.timestamp()*1000),"equity":round(s["equity"],2)}
+    sample.update({a:round(m["price"],2) for a,m in data.items()})
+    history.append(sample)
     s["history"]=history[-2016:]
     with open(STATE_FILE,"w",encoding="utf-8") as f: json.dump(s,f,ensure_ascii=False,indent=2)
     print(json.dumps({"last_run":s["last_run"],"equity":s["equity"],"cash":s["cash"],"positions":len(s["positions"]),"trades":len(s["trades"]),"events":events},ensure_ascii=False))
