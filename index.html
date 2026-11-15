@@ -75,6 +75,13 @@
         <div id="activityPanel" class="dashlist"><div class="empty">Brak aktywności.</div></div>
       </div>
     </div>
+
+    <div class="dashcard" style="margin-top:12px">
+      <div class="charthead"><div><div class="sectiontag">Komentarz rynku</div><h3>AI analityk · raport strategii</h3></div><span class="tag">ANALIZA REGUŁOWA</span></div>
+      <div id="analystSummary" style="font-size:13px;font-weight:750;line-height:1.5;margin-top:12px">Czekam na notowania, aby przygotować komentarz.</div>
+      <div id="analystDetails" class="dashlist" style="margin-top:8px"><div class="dashitem"><span>Stan rynku</span><b>Oczekiwanie na dane</b></div></div>
+      <div class="note">To lokalny analityk oparty na EMA20/EMA50, RSI, otwartych pozycjach i limitach ryzyka. Nie korzysta jeszcze z zewnętrznego modelu językowego ani nie przewiduje cen. Nie zmienia samodzielnie zasad handlu.</div>
+    </div>
   </section>
 
   <section class="section">
@@ -171,6 +178,31 @@ function drawChart(){
  $("chartStart").textContent=chartAsset==="EQUITY"?"Start: 1000 zł":num(first,first>100?0:4);$("chartEnd").textContent=(up?"+":"")+num((last/first-1)*100)+"%";
  document.querySelectorAll("[data-asset]").forEach(b=>b.classList.toggle("active",b.dataset.asset===chartAsset));document.querySelectorAll("[data-period]").forEach(b=>b.classList.toggle("active",Number(b.dataset.period)===chartPeriod));
 }
+
+function updateAnalyst(){
+ let rows=[],bull=0,bear=0,entryReady=0;
+ assets.forEach(a=>{
+  let m=market[a],p=state.positions[a];
+  if(!m){rows.push([a,"Brak danych","Notowania nie zostały jeszcze pobrane."]);return}
+  let trend=m.row.e20>m.row.e50,r=m.row.rsi;if(trend)bull++;else bear++;
+  let ready=trend&&r>=50&&r<=68;if(ready)entryReady++;
+  let stateText=ready?"Warunki wejścia spełnione":trend?"Trend wzrostowy, RSI poza zakresem":"Trend bez potwierdzenia";
+  let explanation="EMA20 "+(trend?"powyżej":"poniżej")+" EMA50; RSI "+num(r,1)+".";
+  if(p){let pct=(m.pricePLN/p.entry-1)*100;stateText="Pozycja otwarta · "+(pct>=0?"zysk":"strata")+" "+num(pct)+"%";explanation+=" Stop: "+money(p.entry*(1-STOP))+"; cel: "+money(p.entry*(1+TAKE))+"."}
+  rows.push([a,stateText,explanation]);
+ });
+ let blocked=dailyLoss()>=DAILY_LIMIT,slots=Object.keys(state.positions).length>=MAX_POS,headline,detail;
+ if(!market.BTC||!market.ETH){headline="Brak pełnych danych rynkowych. Odśwież notowania.";detail="Analityk nie wydaje oceny bez kompletu danych BTC i ETH."}
+ else if(blocked){headline="Priorytet: ochrona kapitału. Dzienny limit straty został osiągnięty.";detail="Nowe zakupy są blokowane do kolejnego dnia według zegara urządzenia."}
+ else if(slots){headline="Portfel wykorzystuje limit dwóch otwartych pozycji. Nowe wejścia są zablokowane.";detail="Najpierw strategia musi zamknąć jedną z obecnych pozycji."}
+ else if(entryReady){headline="Co najmniej jedno aktywo spełnia techniczne warunki wejścia.";detail="To sygnał warunkowy, nie gwarancja wzrostu. Wejście następuje przy ocenie nowej zamkniętej świecy 1h."}
+ else if(bull===2){headline="BTC i ETH są w trendzie wzrostowym, ale nie ma pełnego sygnału wejścia.";detail="Strategia czeka na RSI w przedziale 50–68 na zamkniętej świecy godzinowej."}
+ else if(bear===2){headline="Oba obserwowane aktywa nie potwierdzają trendu wzrostowego. Najrozsądniej poczekać.";detail="Brak transakcji jest zgodny z zasadą selektywnego handlu."}
+ else{headline="Rynek daje mieszane sygnały. Analityk zaleca cierpliwość.";detail="Nie zwiększaj ryzyka tylko po to, aby wymusić transakcję."}
+ $("analystSummary").textContent=headline;
+ $("analystDetails").innerHTML=rows.map(x=>'<div class="dashitem"><span>'+x[0]+'<br><small>'+x[2]+'</small></span><b>'+x[1]+'</b></div>').join("")+'<div class="dashitem"><span>Ocena ryzyka</span><b class="'+(blocked?"negative":"positive")+'">'+(blocked?"Limit dzienny osiągnięty":"Limity aktywne")+'</b></div><div class="dashitem"><span>Decyzja analityka</span><b>'+((blocked||slots||!entryReady)?"CZEKAJ":"SYGNAŁ WARUNKOWY")+'</b></div>';
+}
+
 function renderDashboard(){
  $("realizedPnl").textContent=(realized()>=0?"+":"")+money(realized());$("realizedPnl").className=realized()>=0?"positive":"negative";
  $("unrealizedPnl").textContent=(unrealized()>=0?"+":"")+money(unrealized());$("unrealizedPnl").className=unrealized()>=0?"positive":"negative";
@@ -182,6 +214,7 @@ function renderDashboard(){
  $("signalPanel").innerHTML=assets.map(a=>{let m=market[a];if(!m)return '<div class="dashitem"><span>'+a+'</span><b>Brak danych</b></div>';let trend=m.row.e20>m.row.e50,signal=trend&&m.row.rsi>=50&&m.row.rsi<=68?"Warunki wejścia spełnione":trend?"Trend wzrostowy":"Brak potwierdzenia";return '<div class="dashitem"><span>'+a+' · RSI '+num(m.row.rsi,1)+'</span><b class="'+(trend?"positive":"")+'">'+signal+'</b></div>'}).join("");
  let recent=state.trades.slice(0,4);$("activityPanel").innerHTML=recent.length?recent.map(t=>'<div class="dashitem"><span>'+t.asset+' · '+(t.side==="BUY"?"Kupno":"Sprzedaż")+'<br><small>'+new Date(t.time).toLocaleString("pl-PL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+'</small></span><b class="'+(t.side==="BUY"?"positive":(t.pnl||0)>=0?"positive":"negative")+'">'+(t.pnl===null?"—":money(t.pnl))+'</b></div>').join(""):'<div class="empty">Bot czeka na pierwszą transakcję.</div>';
  drawChart();
+ updateAnalyst();
 }
 function render(){
  let eq=equity(),diff=eq-START;$("equity").textContent=money(eq);$("pnl").textContent=(diff>=0?"+":"")+money(diff)+" · "+num(diff/START*100)+"%";$("pnl").style.color=diff>=0?"var(--green)":"var(--red)";$("cash").textContent=money(state.cash);$("positions").textContent=Object.keys(state.positions).length;$("tradesCount").textContent=state.trades.length;
