@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#080d16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Crypto BOT">
+  <meta name="description" content="Crypto BOT boruty — symulator paper trading BTC i ETH.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Crypto BOT boruty</title>
+  <style>
+    :root{color-scheme:dark;--bg:#080d16;--panel:#101927;--panel2:#0d1521;--line:#1e2b3d;--muted:#8292a8;--text:#edf3fb;--green:#23d18b;--red:#ff657a;--blue:#68a8ff;--amber:#ffca70}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(900px 500px at 50% -150px,#1b2c46 0%,var(--bg) 60%);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);padding:env(safe-area-inset-top) 15px calc(24px + env(safe-area-inset-bottom));}
+    .wrap{max-width:760px;margin:0 auto}.top{display:flex;align-items:center;justify-content:space-between;padding:16px 2px 20px}.brand{display:flex;gap:11px;align-items:center}.logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(145deg,#244d76,#12263d);display:grid;place-items:center;font-size:22px;box-shadow:0 8px 25px #0007}.brand h1{font-size:17px;margin:0;font-weight:750;letter-spacing:.2px}.brand small{display:block;color:var(--muted);font-size:11px;margin-top:3px;letter-spacing:1.2px}.pill{border:1px solid #1e5a49;color:var(--green);background:#0d2b24;padding:7px 10px;border-radius:30px;font-size:10px;font-weight:800;letter-spacing:.8px}
+    .hero{background:linear-gradient(135deg,#14243a,#101927 65%);border:1px solid #26384f;border-radius:22px;padding:20px;box-shadow:0 16px 40px #0004}.eyebrow{color:#9aabc1;font-size:11px;letter-spacing:1.3px;text-transform:uppercase}.balance{font-size:36px;font-weight:800;letter-spacing:-1.2px;margin:9px 0 4px}.gain{font-size:13px;font-weight:700}.sub{color:var(--muted);font-size:11px}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:19px}.metric{background:#0b1420a8;border:1px solid #243348;border-radius:13px;padding:11px}.metric span{display:block;color:var(--muted);font-size:10px;margin-bottom:7px}.metric b{font-size:14px}
+    .section{margin-top:22px}.sectionhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}.sectionhead h2{font-size:14px;margin:0}.sectionhead small{color:var(--muted);font-size:10px}.coins{display:grid;grid-template-columns:1fr 1fr;gap:10px}.coin{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:14px;min-width:0}.coinhead{display:flex;align-items:center;gap:9px}.coinicon{width:31px;height:31px;border-radius:50%;display:grid;place-items:center;font-size:15px;font-weight:800;background:#332718;color:#ffb74c}.coin.eth .coinicon{background:#252840;color:#b8b9ff}.coinname{font-size:12px;font-weight:750}.coinsym{color:var(--muted);font-size:10px;margin-top:2px}.price{font-size:19px;font-weight:800;margin:14px 0 5px;white-space:nowrap}.signal{font-size:10px;color:var(--muted)}.signal.good{color:var(--green)}.signal.bad{color:var(--red)}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:15px}.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #1c2938}.row:last-child{border:0}.row span{color:var(--muted);font-size:12px}.row b{font-size:12px;text-align:right}.btnrow{display:flex;gap:9px;margin-top:13px}.btn{border:1px solid #2a3a50;border-radius:12px;background:#172438;color:var(--text);padding:12px 13px;font-size:12px;font-weight:750;flex:1;cursor:pointer}.btn.primary{background:linear-gradient(135deg,#167d61,#125843);border-color:#23876b}.btn:disabled{opacity:.45}.note{font-size:11px;line-height:1.5;color:var(--muted);margin-top:12px}.tablewrap{overflow:auto}.trade{width:100%;border-collapse:collapse;font-size:10px;min-width:470px}.trade th{text-align:left;color:var(--muted);font-weight:600;padding:9px 7px;border-bottom:1px solid var(--line)}.trade td{padding:10px 7px;border-bottom:1px solid #1b2736}.buy{color:var(--green)}.sell{color:var(--red)}.empty{color:var(--muted);font-size:12px;padding:12px 0}.footer{text-align:center;color:#617187;font-size:10px;line-height:1.5;margin:23px 5px 5px}.status{font-size:10px;color:var(--muted);margin-top:8px;min-height:14px}.toast{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#1a2a3e;border:1px solid #344a65;padding:11px 15px;border-radius:12px;font-size:12px;box-shadow:0 10px 30px #0008;display:none;max-width:90%;z-index:10}
+    @media(max-width:390px){.balance{font-size:31px}.metrics{gap:6px}.metric{padding:9px}.metric b{font-size:12px}.price{font-size:17px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><div class="logo">₿</div><div><h1>Crypto BOT boruty</h1><small>TRADING TERMINAL · PAPER</small></div></div>
+    <div class="pill">● DEMO MODE</div>
+  </header>
+
+  <section class="hero">
+    <div class="eyebrow">Wartość portfela</div>
+    <div class="balance" id="equity">1 000,00 zł</div>
+    <div class="gain" id="pnl">0,00 zł · 0,00%</div>
+    <div class="sub">Kapitał początkowy: 1 000,00 zł · bez prawdziwych zleceń</div>
+    <div class="metrics">
+      <div class="metric"><span>Gotówka</span><b id="cash">1 000 zł</b></div>
+      <div class="metric"><span>Otwarte pozycje</span><b id="positions">0</b></div>
+      <div class="metric"><span>Transakcje</span><b id="tradesCount">0</b></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="sectionhead"><h2>Rynek na żywo</h2><small id="updated">Oczekiwanie na dane…</small></div>
+    <div class="coins">
+      <article class="coin"><div class="coinhead"><div class="coinicon">₿</div><div><div class="coinname">Bitcoin</div><div class="coinsym">BTC / USDT</div></div></div><div class="price" id="btcPrice">—</div><div class="signal" id="btcSignal">Pobieranie danych</div></article>
+      <article class="coin eth"><div class="coinhead"><div class="coinicon">◆</div><div><div class="coinname">Ethereum</div><div class="coinsym">ETH / USDT</div></div></div><div class="price" id="ethPrice">—</div><div class="signal" id="ethSignal">Pobieranie danych</div></article>
+    </div>
+    <div class="status" id="marketStatus"></div>
+  </section>
+
+  <section class="section">
+    <div class="sectionhead"><h2>Silnik strategii</h2><small>EMA 20 / EMA 50 · RSI 14</small></div>
+    <div class="panel">
+      <div class="row"><span>Tryb</span><b class="buy">PAPER TRADING</b></div>
+      <div class="row"><span>Strategia</span><b>Trend + momentum</b></div>
+      <div class="row"><span>Wejście</span><b>EMA20 &gt; EMA50, RSI 50–68</b></div>
+      <div class="row"><span>Wyjście</span><b>Stop -2,5% / słabnący trend</b></div>
+      <div class="row"><span>Wielkość pozycji</span><b>Do 20% portfela na aktywo</b></div>
+      <div class="row"><span>Opłata symulacyjna</span><b>0,10% / stronę</b></div>
+      <div class="btnrow">
+        <button class="btn primary" id="refreshBtn">↻ Odśwież i oceń sygnały</button>
+        <button class="btn" id="resetBtn">Reset</button>
+      </div>
+      <div class="note">Strategia ocenia wyłącznie zamknięte świece 1h. Każda świeca może uruchomić najwyżej jedną ocenę. Symulacja nie jest rekomendacją inwestycyjną.</div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="sectionhead"><h2>Otwarte pozycje</h2><small>Wycena orientacyjna</small></div>
+    <div class="panel" id="positionsList"><div class="empty">Brak otwartych pozycji.</div></div>
+  </section>
+
+  <section class="section">
+    <div class="sectionhead"><h2>Historia transakcji</h2><small>Ostatnie 30 operacji</small></div>
+    <div class="panel tablewrap" id="history"><div class="empty">Nie wykonano jeszcze transakcji.</div></div>
+  </section>
+
+  <div class="footer">Crypto BOT boruty · wersja demonstracyjna 0.1<br>Notowania publiczne Binance · kurs USD/PLN NBP<br>Brak połączenia z kontem giełdowym. Żadne prawdziwe pieniądze nie są używane.</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const START=1000, FEE=.001, assets=["BTC","ETH"], symbols={BTC:"BTCUSDT",ETH:"ETHUSDT"};
+const $=id=>document.getElementById(id);
+let state=loadState(), market={}, usdpln=null, busy=false;
+function loadState(){try{let x=JSON.parse(localStorage.getItem("cbboruty_state"));if(x&&Number.isFinite(x.cash)&&x.positions&&Array.isArray(x.trades))return x}catch(e){}return {cash:START,positions:{},trades:[],lastCandles:{}}}
+function save(){localStorage.setItem("cbboruty_state",JSON.stringify(state))}
+function money(n){return Number(n||0).toLocaleString("pl-PL",{style:"currency",currency:"PLN"})}
+function num(n,d=2){return Number(n).toLocaleString("pl-PL",{minimumFractionDigits:d,maximumFractionDigits:d})}
+function toast(s){$("toast").textContent=s;$("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",2600)}
+async function getJSON(url){let r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
+async function candles(symbol){let a=await getJSON("https://api.binance.com/api/v3/klines?symbol="+symbol+"&interval=1h&limit=120");return a.slice(0,-1).map(x=>({t:x[0],close:+x[4]}))}
+function calc(rows){let e20=null,e50=null,g=0,l=0,prev=null,alpha20=2/21,alpha50=2/51,ag=null,al=null;let vals=[];rows.forEach((r,i)=>{e20=e20===null?r.close:e20+(r.close-e20)*alpha20;e50=e50===null?r.close:e50+(r.close-e50)*alpha50;if(prev!==null){let diff=r.close-prev,up=Math.max(diff,0),dn=Math.max(-diff,0);ag=ag===null?up:ag+(up-ag)/14;al=al===null?dn:al+(dn-al)/14;}prev=r.close;let rsi=al===null?50:al===0?100:100-100/(1+ag/al);vals.push({...r,e20,e50,rsi})});return vals}
+function positionValue(){return Object.entries(state.positions).reduce((s,[a,p])=>s+(market[a]?.pricePLN||p.entry)*p.qty,0)}
+function equity(){return state.cash+positionValue()}
+function render(){
+ let eq=equity(),diff=eq-START;$("equity").textContent=money(eq);$("pnl").textContent=money(diff)+" · "+num(diff/START*100)+"%";$("pnl").style.color=diff>=0?"var(--green)":"var(--red)";$("cash").textContent=money(state.cash);$("positions").textContent=Object.keys(state.positions).length;$("tradesCount").textContent=state.trades.length;
+ for(let a of assets){let m=market[a];if(m){$(a.toLowerCase()+"Price").textContent=money(m.pricePLN);let sig=m.row.e20>m.row.e50?"EMA trend up":"Trend not confirmed";$(a.toLowerCase()+"Signal").textContent=sig+" · RSI "+num(m.row.rsi,1);$(a.toLowerCase()+"Signal").className="signal "+(m.row.e20>m.row.e50?"good":"")}}
+ let ps=Object.entries(state.positions);$("positionsList").innerHTML=ps.length?ps.map(([a,p])=>`<div class="row"><span>${a} · ${num(p.qty,6)} szt.</span><b>${money((market[a]?.pricePLN||p.entry)*p.qty)}<br><small style="color:${((market[a]?.pricePLN||p.entry)-p.entry)>=0?'var(--green)':'var(--red)'}">Wejście ${money(p.entry)} · wynik ${money(((market[a]?.pricePLN||p.entry)-p.entry)*p.qty)}</small></b></div>`).join(""):'<div class="empty">Brak otwartych pozycji.</div>';
+ let trs=state.trades.slice(0,30);$("history").innerHTML=trs.length?`<table class="trade"><thead><tr><th>Data</th><th>Aktywo</th><th>Typ</th><th>Cena</th><th>Wynik</th></tr></thead><tbody>${trs.map(t=>`<tr><td>${new Date(t.time).toLocaleString("pl-PL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</td><td>${t.asset}</td><td class="${t.side==='BUY'?'buy':'sell'}">${t.side==='BUY'?'KUPNO':'SPRZEDAŻ'}</td><td>${money(t.price)}</td><td>${t.pnl==null?'—':money(t.pnl)}</td></tr>`).join("")}</tbody></table>`:'<div class="empty">Nie wykonano jeszcze transakcji.</div>';
+}
+function trade(a,side,price,reason){let p=state.positions[a];if(side==="BUY"&&!p){let budget=Math.min(state.cash,equity()*.20);if(budget<20)return;let fee=budget*FEE,qty=(budget-fee)/price;state.cash-=budget;state.positions[a]={qty,entry:price};state.trades.unshift({time:Date.now(),asset:a,side,price,qty,pnl:null,reason,fee});return true}
+ if(side==="SELL"&&p){let gross=p.qty*price,fee=gross*FEE,net=gross-fee,pnl=net-p.qty*p.entry;state.cash+=net;state.trades.unshift({time:Date.now(),asset:a,side,price,qty:p.qty,pnl,reason,fee});delete state.positions[a];return true}return false}
+function evaluate(a,row,price,candle){if(state.lastCandles[a]===candle)return false;state.lastCandles[a]=candle;let p=state.positions[a],changed=false;if(p){if(price<=p.entry*.975)changed=trade(a,"SELL",price,"Stop loss -2.5%")||changed;else if(row.e20<row.e50||row.rsi>=75)changed=trade(a,"SELL",price,"Trend/RSI exit")||changed}else if(row.e20>row.e50&&row.rsi>=50&&row.rsi<=68){changed=trade(a,"BUY",price,"EMA20>EMA50, RSI 50-68")||changed}return changed}
+async function refresh(){if(busy)return;busy=true;$("refreshBtn").disabled=true;$("marketStatus").textContent="Pobieranie notowań i analiza…";try{let [fx,c1,c2]=await Promise.all([getJSON("https://api.nbp.pl/api/exchangerates/rates/a/usd/?format=json"),candles(symbols.BTC),candles(symbols.ETH)]);usdpln=fx.rates[0].mid;market={};for(let [a,rows] of [["BTC",c1],["ETH",c2]]){let data=calc(rows),row=data[data.length-1];market[a]={rows,row,pricePLN:row.close*usdpln};}
+ let changed=[];for(let a of assets){if(evaluate(a,market[a].row,market[a].pricePLN,market[a].row.t))changed.push(a)}save();render();$("updated").textContent="Aktualizacja "+new Date().toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"});$("marketStatus").textContent=changed.length?"Nowa symulowana transakcja: "+changed.join(", "):"Dane pobrane. Brak nowych zleceń.";if(changed.length)toast("Zapisano wirtualną transakcję: "+changed.join(", "))}catch(e){$("marketStatus").textContent="Błąd pobierania danych: "+e.message+". Sprawdź połączenie i spróbuj ponownie."}finally{busy=false;$("refreshBtn").disabled=false}}
+$("refreshBtn").addEventListener("click",refresh);
+$("resetBtn").addEventListener("click",()=>{if(confirm("Czy na pewno wyzerować wirtualny portfel i historię?")){state={cash:START,positions:{},trades:[],lastCandles:{}};save();render();toast("Portfel zresetowany do 1000 zł")}})
+render();refresh();
+if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("./sw.js").catch(()=>{});
+</script>
+</body></html>
