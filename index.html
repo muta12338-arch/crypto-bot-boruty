@@ -166,19 +166,22 @@ function allFees(){return state.trades.reduce((s,t)=>s+(t.fee||0),0)}
 function winPct(){let t=closedTrades();return t.length?t.filter(x=>x.pnl>0).length/t.length*100:null}
 function equityCurve(){let v=START,pts=[v];closedTrades().slice().reverse().forEach(t=>{v+=t.pnl||0;pts.push(v)});return pts}
 function drawChart(){
- let box=$("mainChart");if(!box)return;let values=[],title="";
- if(chartAsset==="EQUITY"){values=equityCurve();title="Kapitał · wynik zrealizowany"}
- else{let m=market[chartAsset];if(!m){box.innerHTML='<div class="empty">Oczekiwanie na dane z silnika chmurowego.</div>';return}box.innerHTML='<div style="padding:22px 8px;text-align:center"><div class="dashmuted">OSTATNIA CENA Z SILNIKA</div><div style="font-size:25px;font-weight:800;margin:10px 0">'+money(m.pricePLN)+'</div><div class="dashmuted">EMA20 '+num(m.row.e20,2)+' · EMA50 '+num(m.row.e50,2)+' · RSI '+num(m.row.rsi,1)+'</div><div class="dashmuted" style="margin-top:12px">Wykres historyczny zostanie dodany w kolejnej aktualizacji silnika.</div></div>';title=chartAsset==="BTC"?"Bitcoin · BTC/PLN":"Ethereum · ETH/PLN";$("chartTitle").textContent=title;document.querySelectorAll("[data-asset]").forEach(b=>b.classList.toggle("active",b.dataset.asset===chartAsset));document.querySelectorAll("[data-period]").forEach(b=>b.classList.toggle("active",Number(b.dataset.period)===chartPeriod));$("chartStart").textContent="Źródło: Kraken";$("chartEnd").textContent="Dane chmurowe";return}
- $("chartTitle").textContent=title;if(values.length<2){box.innerHTML='<div class="empty">Za mało danych do wykresu.</div>';return}
- let min=Math.min(...values),max=Math.max(...values),range=max-min||1,w=600,h=190,pad=12;
+ let box=$("mainChart");if(!box)return;
+ let title=chartAsset==="EQUITY"?"Kapitał portfela":chartAsset==="BTC"?"Bitcoin · BTC/PLN":"Ethereum · ETH/PLN";
+ let key=chartAsset==="EQUITY"?"equity":chartAsset,cutoff=Date.now()-chartPeriod*60*60*1000;
+ let points=(Array.isArray(state.history)?state.history:[]).filter(p=>Number(p.time)>=cutoff&&Number.isFinite(Number(p[key]))).map(p=>({t:Number(p.time),v:Number(p[key])}));
+ $("chartTitle").textContent=title;
+ document.querySelectorAll("[data-asset]").forEach(b=>b.classList.toggle("active",b.dataset.asset===chartAsset));
+ document.querySelectorAll("[data-period]").forEach(b=>b.classList.toggle("active",Number(b.dataset.period)===chartPeriod));
+ if(points.length<2){box.innerHTML='<div class="empty">Zbieram historię notowań. Wykres pojawi się po kilku kolejnych przebiegach silnika.</div>';$("chartStart").textContent="Próbki: "+points.length;$("chartEnd").textContent="Ostatnie "+chartPeriod+" h";return}
+ let values=points.map(p=>p.v),min=Math.min(...values),max=Math.max(...values),range=max-min||Math.max(1,Math.abs(max)*.001),w=600,h=190,pad=12;
  let coords=values.map((v,i)=>[pad+i*(w-2*pad)/(values.length-1),h-pad-(v-min)/range*(h-2*pad)]);
  let path=coords.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" "),area=path+" L"+coords[coords.length-1][0]+","+(h-pad)+" L"+pad+","+(h-pad)+" Z";
  let first=values[0],last=values[values.length-1],up=last>=first,stroke=up?"#23d18b":"#ff657a";
  box.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Wykres '+title+'"><defs><linearGradient id="chartFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="'+stroke+'" stop-opacity=".28"/><stop offset="100%" stop-color="'+stroke+'" stop-opacity="0"/></linearGradient></defs><path d="M'+pad+' '+(h/2)+' H'+(w-pad)+'" stroke="#263449" stroke-dasharray="4 6" fill="none"/><path d="'+area+'" fill="url(#chartFill)"/><path d="'+path+'" fill="none" stroke="'+stroke+'" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="'+coords[coords.length-1][0]+'" cy="'+coords[coords.length-1][1]+'" r="4" fill="'+stroke+'"/></svg>';
- $("chartStart").textContent=chartAsset==="EQUITY"?"Start: 1000 zł":num(first,first>100?0:4);$("chartEnd").textContent=(up?"+":"")+num((last/first-1)*100)+"%";
- document.querySelectorAll("[data-asset]").forEach(b=>b.classList.toggle("active",b.dataset.asset===chartAsset));document.querySelectorAll("[data-period]").forEach(b=>b.classList.toggle("active",Number(b.dataset.period)===chartPeriod));
+ $("chartStart").textContent=new Date(points[0].t).toLocaleString("pl-PL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+ $("chartEnd").textContent=money(last)+" · "+(up?"+":"")+num((last/first-1)*100)+"%";
 }
-
 function updateAnalyst(){
  let rows=[],bull=0,bear=0,entryReady=0;
  assets.forEach(a=>{
@@ -230,7 +233,7 @@ async function refresh(){
   const url="https://raw.githubusercontent.com/muta12338-arch/crypto-bot-boruty/main/portfolio-state.json?ts="+Date.now();
   const cloud=await getJSON(url);
   if(!Number.isFinite(Number(cloud.cash))||!cloud.prices||!cloud.indicators||!cloud.positions||!Array.isArray(cloud.trades))throw Error("Plik portfela ma nieoczekiwany format");
-  state={cash:Number(cloud.cash),positions:cloud.positions,trades:cloud.trades,lastCandles:cloud.last_candles||{},dayKey:dayKey(),dayStartEquity:Number(cloud.day_start_equity||START),cloudEnabled:cloud.enabled!==false,lastRun:cloud.last_run,day:cloud.day};
+  state={cash:Number(cloud.cash),positions:cloud.positions,trades:cloud.trades,lastCandles:cloud.last_candles||{},history:Array.isArray(cloud.history)?cloud.history:[],dayKey:dayKey(),dayStartEquity:Number(cloud.day_start_equity||START),cloudEnabled:cloud.enabled!==false,lastRun:cloud.last_run,day:cloud.day};
   market={};
   assets.forEach(a=>{let ind=cloud.indicators[a],price=Number(cloud.prices[a]);if(ind&&Number.isFinite(price))market[a]={pricePLN:price,row:{e20:Number(ind.ema20),e50:Number(ind.ema50),rsi:Number(ind.rsi)},rows:[]};});
   if(!market.BTC||!market.ETH)throw Error("Brak kompletnych danych BTC/ETH");
