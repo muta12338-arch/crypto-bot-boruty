@@ -1,0 +1,15 @@
+{
+  "cash": 1000,
+  "positions": {},
+  "trades": [],
+  "last_candles": {},
+  "day": null,
+  "day_start_equity": 1000,
+  "enabled": true,
+  "last_run": null,
+  "prices": {},
+  "indicators": {},
+  "equity": 1000,
+  "daily_loss_pct": 0,
+  "last_events": []
+}
