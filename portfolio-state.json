@@ -2,14 +2,31 @@
   "cash": 1000,
   "positions": {},
   "trades": [],
-  "last_candles": {},
-  "day": null,
-  "day_start_equity": 1000,
+  "last_candles": {
+    "BTC": 1794765600000,
+    "ETH": 1794765600000
+  },
+  "day": "2026-11-15",
+  "day_start_equity": 1000.0,
   "enabled": true,
-  "last_run": null,
-  "prices": {},
-  "indicators": {},
-  "equity": 1000,
+  "last_run": "2026-11-15T19:46:23.401857+00:00",
+  "prices": {
+    "BTC": 258784.9398,
+    "ETH": 7271.79444
+  },
+  "indicators": {
+    "BTC": {
+      "ema20": 64964.23739129779,
+      "ema50": 66136.73865588101,
+      "rsi": 47.36075901709291
+    },
+    "ETH": {
+      "ema20": 1815.937883404488,
+      "ema50": 1851.0569660310996,
+      "rsi": 50.796485463247386
+    }
+  },
+  "equity": 1000.0,
   "daily_loss_pct": 0,
   "last_events": []
 }
