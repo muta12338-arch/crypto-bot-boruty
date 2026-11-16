@@ -107,6 +107,18 @@ def main():
             del s["positions"][a]
             events.append(f"{a} zamknięcie {side}: {reason}")
 
+    # Daily loss circuit breaker: flatten every simulated position at current marks.
+    if daily_loss() >= DAILY_LIMIT and s["positions"]:
+        for a, p in list(s["positions"].items()):
+            price = data[a]["price"]
+            raw_pnl = position_pnl(p, price)
+            exit_fee = p["qty"] * price * FEE
+            s["cash"] += float(p.get("margin", 0)) + raw_pnl - exit_fee
+            net_pnl = raw_pnl - exit_fee - float(p.get("entry_fee", 0))
+            s["trades"].insert(0, {"time": int(time.time()*1000), "asset": a, "side": "EXIT_" + p.get("side", "LONG"), "price": price, "qty": p["qty"], "pnl": net_pnl, "fee": exit_fee, "reason": "Dzienny limit straty 5% - awaryjne zamknięcie", "leverage": p.get("leverage", LEVERAGE)})
+            del s["positions"][a]
+            events.append(f"{a} awaryjne zamknięcie - limit dzienny 5%")
+
     # Evaluate both LONG and SHORT on each newly closed 15-minute candle.
     for a, m in data.items():
         if m["candle"] == s.get("last_candles", {}).get(a):
