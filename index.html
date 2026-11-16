@@ -95,7 +95,7 @@
     <div class="panel">
       <div class="row"><span>Tryb</span><b class="buy">PAPER TRADING</b></div>
       <div class="row"><span>Strategia</span><b>Active Trading · LONG / SHORT · futures x3</b></div>
-      <div class="row"><span>Wejście</span><b>LONG: EMA20 &gt; EMA50 / SHORT: EMA20 &lt; EMA50</b></div>
+      <div class="row"><span>Wejście</span><b>LONG: EMA20 &gt; EMA50 + RSI 45–72 / SHORT: EMA20 &lt; EMA50 + RSI 28–55</b></div>
       <div class="row"><span>Wyjście</span><b>SL 2,5% / TP 4% · dźwignia do x3</b></div>
       <div class="row"><span>Ryzyko na transakcję</span><b>Maks. 1% portfela przy stop loss</b></div>
       <div class="row"><span>Alokacja pozycji</span><b>Maks. 10% depozytu portfela na pozycję</b></div>
@@ -108,7 +108,7 @@
         <button class="btn" id="autoBtn">▶ Automatyzacja: WYŁ.</button>
         <button class="btn" id="resetBtn">Reset</button>
       </div>
-      <div class="note">Wejścia: zamknięte świece 1h. Stop loss -2,5%, take profit +5%. Ryzyko modelowane na poziomie maks. 1% kapitału przy stop loss; wartość pojedynczej pozycji nie przekracza 10% kapitału. Maks. 10 otwartych pozycji, limit straty dziennej 5%. iPhone może wstrzymać działanie w tle. To symulacja, nie rekomendacja inwestycyjna.</div>
+      <div class="note">Wejścia: zamknięte świece 15-minutowe. Stop loss -2,5%, take profit +4%. Ryzyko modelowane na poziomie maks. 1% kapitału przy stop loss; wartość pojedynczej pozycji nie przekracza 10% kapitału. Maks. 10 otwartych pozycji, limit straty dziennej 5%. iPhone może wstrzymać działanie w tle. To symulacja, nie rekomendacja inwestycyjna.</div>
     </div>
   </section>
 
@@ -197,7 +197,7 @@ function updateAnalyst(){
  if(Object.keys(market).length!==assets.length){headline="Brak kompletu danych rynkowych. Odśwież notowania.";detail="Analityk oczekuje na notowania wszystkich 10 aktywów."}
  else if(blocked){headline="Priorytet: ochrona kapitału. Dzienny limit straty został osiągnięty.";detail="Nowe zakupy są blokowane do kolejnego dnia według zegara urządzenia."}
  else if(slots){headline="Portfel wykorzystuje limit 10 otwartych pozycji. Nowe wejścia są zablokowane.";detail="Najpierw strategia musi zamknąć jedną z obecnych pozycji."}
- else if(entryReady){headline="Co najmniej jedno aktywo spełnia techniczne warunki wejścia.";detail="To sygnał warunkowy, nie gwarancja wzrostu. Wejście następuje przy ocenie nowej zamkniętej świecy 1h."}
+ else if(entryReady){headline="Co najmniej jedno aktywo spełnia techniczne warunki wejścia.";detail="To sygnał warunkowy, nie gwarancja wzrostu. Wejście następuje przy ocenie nowej zamkniętej świecy 15-minutowej."}
  else if(bull===assets.length){headline="Wszystkie obserwowane aktywa są w trendzie wzrostowym, ale wymagają potwierdzenia RSI.";detail="Strategia czeka na RSI w przedziale 50–68 na zamkniętej świecy godzinowej."}
  else if(bear===assets.length){headline="Żadne z obserwowanych aktywów nie potwierdza trendu wzrostowego. Najrozsądniej poczekać.";detail="Brak transakcji jest zgodny z zasadą selektywnego handlu."}
  else{headline="Rynek daje mieszane sygnały. Analityk zaleca cierpliwość.";detail="Nie zwiększaj ryzyka tylko po to, aby wymusić transakcję."}
@@ -212,7 +212,7 @@ function renderDashboard(){
  let eq=equity(),parts=[["Gotówka",Math.max(0,state.cash)],...assets.filter(a=>state.positions[a]).map(a=>{let p=state.positions[a],px=market[a]?market[a].pricePLN:p.entry,dir=p.side==='SHORT'?-1:1;return [a,Math.max(0,(p.margin||0)+dir*(px-p.entry)*p.qty)]})];
  $("allocation").innerHTML=parts.map(p=>'<div class="allocrow"><span class="dashmuted" style="width:70px">'+p[0]+'</span><div class="allocbar"><i style="width:'+Math.max(0,Math.min(100,eq?p[1]/eq*100:0))+'%"></i></div><b>'+num(eq?p[1]/eq*100:0)+'%</b></div>').join("")+'<div class="dashitem"><span>Wartość portfela</span><b>'+money(eq)+'</b></div>';
  let loss=dailyLoss()*100,exposure=eq?posValue()/eq*100:0;
- $("riskPanel").innerHTML='<div class="dashitem"><span>Dzienna strata</span><b class="'+(loss>0?"negative":"positive")+'">'+num(loss)+'% / 3%</b></div><div class="riskline"><i style="width:'+Math.min(100,loss/3*100)+'%"></i></div><div class="dashitem"><span>Ekspozycja w rynku</span><b>'+num(exposure)+'%</b></div><div class="dashitem"><span>Wolne środki</span><b>'+money(state.cash)+'</b></div><div class="dashitem"><span>Wolne miejsca</span><b>'+Math.max(0,MAX_POS-Object.keys(state.positions).length)+' / '+MAX_POS+'</b></div>';
+ $("riskPanel").innerHTML='<div class="dashitem"><span>Dzienna strata</span><b class="'+(loss>0?"negative":"positive")+'">'+num(loss)+'% / 5%</b></div><div class="riskline"><i style="width:'+Math.min(100,loss/5*100)+'%"></i></div><div class="dashitem"><span>Ekspozycja w rynku</span><b>'+num(exposure)+'%</b></div><div class="dashitem"><span>Wolne środki</span><b>'+money(state.cash)+'</b></div><div class="dashitem"><span>Wolne miejsca</span><b>'+Math.max(0,MAX_POS-Object.keys(state.positions).length)+' / '+MAX_POS+'</b></div>';
  $("signalPanel").innerHTML=assets.map(a=>{let m=market[a];if(!m)return '<div class="dashitem"><span>'+a+'</span><b>Brak danych</b></div>';let trend=m.row.e20>m.row.e50,signal=trend&&m.row.rsi>=50&&m.row.rsi<=68?"Warunki wejścia spełnione":trend?"Trend wzrostowy":"Brak potwierdzenia";return '<div class="dashitem"><span>'+a+' · RSI '+num(m.row.rsi,1)+'</span><b class="'+(trend?"positive":"")+'">'+signal+'</b></div>'}).join("");
  let recent=state.trades.slice(0,4);$("activityPanel").innerHTML=recent.length?recent.map(t=>'<div class="dashitem"><span>'+t.asset+' · '+(t.side==="BUY"?"Kupno":"Sprzedaż")+'<br><small>'+new Date(t.time).toLocaleString("pl-PL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+'</small></span><b class="'+((t.side==="BUY"||t.side==="LONG"||t.side==="SHORT")?"positive":(t.pnl||0)>=0?"positive":"negative")+'">'+(t.pnl===null?"—":money(t.pnl))+'</b></div>').join(""):'<div class="empty">Bot czeka na pierwszą transakcję.</div>';
  drawChart();
@@ -249,7 +249,7 @@ document.querySelectorAll("[data-asset]").forEach(b=>b.addEventListener("click",
 document.querySelectorAll("[data-period]").forEach(b=>b.addEventListener("click",()=>{chartPeriod=Number(b.dataset.period);drawChart()}));
 $("refreshBtn").addEventListener("click",refresh);
 $("autoBtn").addEventListener("click",()=>toast("Automatyzacja jest zarządzana przez silnik chmurowy GitHub Actions."));
-$("resetBtn").addEventListener("click",()=>{if(confirm("Czy na pewno wyzerować wirtualny portfel i historię?")){state={cash:START,positions:{},trades:[],lastCandles:{},dayKey:null,dayStartEquity:null};save();render();toast("Portfel zresetowany do 1000 zł")}});
+$("resetBtn").addEventListener("click",()=>{if(confirm("Czy na pewno wyzerować wirtualny portfel i historię?")){state={cash:START,positions:{},trades:[],lastCandles:{},dayKey:null,dayStartEquity:null};save();render();toast("Portfel zresetowany")}});
 render();paintAutoButton();refresh();
 setInterval(()=>{if(!document.hidden)refresh()},60*1000);
 document.addEventListener("visibilitychange",()=>{if(autoEnabled&&!document.hidden)refresh()});
