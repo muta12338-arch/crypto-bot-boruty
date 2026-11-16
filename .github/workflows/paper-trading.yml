@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Pobierz repozytorium
         uses: actions/checkout@v4
+      - name: Testy bezpieczeństwa strategii
+        run: python3 -m unittest -v test_bot_engine.py
       - name: Uruchom symulowany silnik
         run: python3 bot_engine.py
       - name: Zapisz stan portfela
