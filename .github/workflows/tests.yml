@@ -1,0 +1,21 @@
+name: Crypto BOT boruty - safety tests
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'bot_engine.py'
+      - 'test_bot_engine.py'
+      - '.github/workflows/tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pobierz repozytorium
+        uses: actions/checkout@v4
+      - name: Sprawdź składnię Pythona
+        run: python3 -m py_compile bot_engine.py test_bot_engine.py
+      - name: Testy bezpieczeństwa strategii
+        run: python3 -m unittest -v test_bot_engine.py
