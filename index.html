@@ -34,11 +34,11 @@
 
   <section class="hero">
     <div class="eyebrow">Wartość portfela</div>
-    <div class="balance" id="equity">1 000,00 zł</div>
+    <div class="balance" id="equity">30 000,00 zł</div>
     <div class="gain" id="pnl">0,00 zł · 0,00%</div>
-    <div class="sub">Kapitał początkowy: 1 000,00 zł · bez prawdziwych zleceń</div>
+    <div class="sub">Kapitał początkowy: 30 000,00 zł · bez prawdziwych zleceń</div>
     <div class="metrics">
-      <div class="metric"><span>Gotówka</span><b id="cash">1 000 zł</b></div>
+      <div class="metric"><span>Gotówka</span><b id="cash">30 000 zł</b></div>
       <div class="metric"><span>Otwarte pozycje</span><b id="positions">0</b></div>
       <div class="metric"><span>Transakcje</span><b id="tradesCount">0</b></div>
     </div>
@@ -91,24 +91,24 @@
   </section>
 
   <section class="section">
-    <div class="sectionhead"><h2>Silnik strategii</h2><small>EMA 20 / EMA 50 · RSI 14</small></div>
+    <div class="sectionhead"><h2>Silnik strategii</h2><small>EMA 20 / EMA 50 · RSI 14 · LONG / SHORT x3</small></div>
     <div class="panel">
       <div class="row"><span>Tryb</span><b class="buy">PAPER TRADING</b></div>
-      <div class="row"><span>Strategia</span><b>Trend + momentum</b></div>
-      <div class="row"><span>Wejście</span><b>EMA20 &gt; EMA50, RSI 50–68</b></div>
-      <div class="row"><span>Wyjście</span><b>Stop -2,5% / take profit +5%</b></div>
+      <div class="row"><span>Strategia</span><b>Active Trading · LONG / SHORT · futures x3</b></div>
+      <div class="row"><span>Wejście</span><b>LONG: EMA20 &gt; EMA50 / SHORT: EMA20 &lt; EMA50</b></div>
+      <div class="row"><span>Wyjście</span><b>SL 2,5% / TP 4% · dźwignia do x3</b></div>
       <div class="row"><span>Ryzyko na transakcję</span><b>Maks. 1% portfela przy stop loss</b></div>
-      <div class="row"><span>Alokacja pozycji</span><b>Maks. 10% kapitału</b></div>
+      <div class="row"><span>Alokacja pozycji</span><b>Maks. 10% depozytu portfela na pozycję</b></div>
       <div class="row"><span>Limit pozycji</span><b>Maks. 10 jednocześnie</b></div>
       <div class="row"><span>Obserwowane aktywa</span><b>BTC · ETH · SOL · XRP · ADA · LINK · LTC · DOGE · AVAX · DOT</b></div>
-      <div class="row"><span>Limit straty dziennej</span><b>3% kapitału na start dnia</b></div>
+      <div class="row"><span>Limit straty dziennej</span><b>5% kapitału na start dnia (1 500 zł)</b></div>
       <div class="row"><span>Opłata symulacyjna</span><b>0,10% / stronę</b></div>
       <div class="btnrow">
         <button class="btn primary" id="refreshBtn">↻ Odśwież i oceń sygnały</button>
         <button class="btn" id="autoBtn">▶ Automatyzacja: WYŁ.</button>
         <button class="btn" id="resetBtn">Reset</button>
       </div>
-      <div class="note">Wejścia: zamknięte świece 1h. Stop loss -2,5%, take profit +5%. Ryzyko modelowane na poziomie maks. 1% kapitału przy stop loss; wartość pojedynczej pozycji nie przekracza 10% kapitału. Maks. 10 otwartych pozycji, limit straty dziennej 3%. iPhone może wstrzymać działanie w tle. To symulacja, nie rekomendacja inwestycyjna.</div>
+      <div class="note">Wejścia: zamknięte świece 1h. Stop loss -2,5%, take profit +5%. Ryzyko modelowane na poziomie maks. 1% kapitału przy stop loss; wartość pojedynczej pozycji nie przekracza 10% kapitału. Maks. 10 otwartych pozycji, limit straty dziennej 5%. iPhone może wstrzymać działanie w tle. To symulacja, nie rekomendacja inwestycyjna.</div>
     </div>
   </section>
 
@@ -122,11 +122,11 @@
     <div class="panel tablewrap" id="history"><div class="empty">Nie wykonano jeszcze transakcji.</div></div>
   </section>
 
-  <div class="footer">Crypto BOT boruty · wersja demonstracyjna 2.3 · 10 aktywów · cloud dashboard<br>Portfel z GitHub Actions · notowania Kraken · kurs USD/PLN NBP<br>Brak połączenia z kontem giełdowym. Żadne prawdziwe pieniądze nie są używane.</div>
+  <div class="footer">Crypto BOT boruty · wersja demonstracyjna 3.0 · 10 aktywów · cloud dashboard<br>Portfel z GitHub Actions · notowania Kraken · kurs USD/PLN NBP<br>Brak połączenia z kontem giełdowym. Żadne prawdziwe pieniądze nie są używane.</div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
-const START=1000,FEE=.001,STOP=.025,TAKE=.05,RISK=.01,MAX_POS=10,DAILY_LIMIT=.03;
+const START=30000,FEE=.001,STOP=.025,TAKE=.05,RISK=.01,MAX_POS=10,DAILY_LIMIT=.05;
 const assets=["BTC","ETH","SOL","XRP","ADA","LINK","LTC","DOGE","AVAX","DOT"],symbols={},assetNames={BTC:"Bitcoin",ETH:"Ethereum",SOL:"Solana",XRP:"XRP",ADA:"Cardano",LINK:"Chainlink",LTC:"Litecoin",DOGE:"Dogecoin",AVAX:"Avalanche",DOT:"Polkadot"},assetIcons={BTC:"₿",ETH:"◆",SOL:"◎",XRP:"✕",ADA:"₳",LINK:"⬡",LTC:"Ł",DOGE:"Ð",AVAX:"▲",DOT:"●"},$=id=>document.getElementById(id);
 let state=loadState(),market={},busy=false,autoEnabled=localStorage.getItem("cbboruty_auto")===null?true:localStorage.getItem("cbboruty_auto")==="1";
 function loadState(){try{let x=JSON.parse(localStorage.getItem("cbboruty_state"));if(x&&Number.isFinite(x.cash)&&x.positions&&Array.isArray(x.trades)){x.lastCandles=x.lastCandles||{};return x}}catch(e){}return{cash:START,positions:{},trades:[],lastCandles:{},dayKey:null,dayStartEquity:null}}
@@ -158,9 +158,9 @@ function trade(a,side,price,reason){
 }
 function exitCheck(a,row,price,newCandle){let p=state.positions[a];if(!p)return false;if(price<=p.entry*(1-STOP))return trade(a,"SELL",price,"Stop loss -2,5%");if(price>=p.entry*(1+TAKE))return trade(a,"SELL",price,"Take profit +5%");if(newCandle&&(row.e20<row.e50||row.rsi>=75))return trade(a,"SELL",price,"Wyjście techniczne EMA/RSI");return false}
 let chartAsset="BTC",chartPeriod=24;
-function closedTrades(){return state.trades.filter(t=>t.side==="SELL")}
+function closedTrades(){return state.trades.filter(t=>t.side==="SELL"||t.side==="EXIT_LONG"||t.side==="EXIT_SHORT")}
 function realized(){return closedTrades().reduce((s,t)=>s+(t.pnl||0),0)}
-function unrealized(){return Object.keys(state.positions).reduce((s,a)=>{let p=state.positions[a],px=market[a]?market[a].pricePLN:p.entry;return s+(px-p.entry)*p.qty},0)}
+function unrealized(){return Object.keys(state.positions).reduce((s,a)=>{let p=state.positions[a],px=market[a]?market[a].pricePLN:p.entry,dir=p.side==='SHORT'?-1:1;return s+dir*(px-p.entry)*p.qty},0)}
 function allFees(){return state.trades.reduce((s,t)=>s+(t.fee||0),0)}
 function winPct(){let t=closedTrades();return t.length?t.filter(x=>x.pnl>0).length/t.length*100:null}
 function equityCurve(){let v=START,pts=[v];closedTrades().slice().reverse().forEach(t=>{v+=t.pnl||0;pts.push(v)});return pts}
@@ -214,15 +214,15 @@ function renderDashboard(){
  let loss=dailyLoss()*100,exposure=eq?posValue()/eq*100:0;
  $("riskPanel").innerHTML='<div class="dashitem"><span>Dzienna strata</span><b class="'+(loss>0?"negative":"positive")+'">'+num(loss)+'% / 3%</b></div><div class="riskline"><i style="width:'+Math.min(100,loss/3*100)+'%"></i></div><div class="dashitem"><span>Ekspozycja w rynku</span><b>'+num(exposure)+'%</b></div><div class="dashitem"><span>Wolne środki</span><b>'+money(state.cash)+'</b></div><div class="dashitem"><span>Wolne miejsca</span><b>'+Math.max(0,MAX_POS-Object.keys(state.positions).length)+' / '+MAX_POS+'</b></div>';
  $("signalPanel").innerHTML=assets.map(a=>{let m=market[a];if(!m)return '<div class="dashitem"><span>'+a+'</span><b>Brak danych</b></div>';let trend=m.row.e20>m.row.e50,signal=trend&&m.row.rsi>=50&&m.row.rsi<=68?"Warunki wejścia spełnione":trend?"Trend wzrostowy":"Brak potwierdzenia";return '<div class="dashitem"><span>'+a+' · RSI '+num(m.row.rsi,1)+'</span><b class="'+(trend?"positive":"")+'">'+signal+'</b></div>'}).join("");
- let recent=state.trades.slice(0,4);$("activityPanel").innerHTML=recent.length?recent.map(t=>'<div class="dashitem"><span>'+t.asset+' · '+(t.side==="BUY"?"Kupno":"Sprzedaż")+'<br><small>'+new Date(t.time).toLocaleString("pl-PL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+'</small></span><b class="'+(t.side==="BUY"?"positive":(t.pnl||0)>=0?"positive":"negative")+'">'+(t.pnl===null?"—":money(t.pnl))+'</b></div>').join(""):'<div class="empty">Bot czeka na pierwszą transakcję.</div>';
+ let recent=state.trades.slice(0,4);$("activityPanel").innerHTML=recent.length?recent.map(t=>'<div class="dashitem"><span>'+t.asset+' · '+(t.side==="BUY"?"Kupno":"Sprzedaż")+'<br><small>'+new Date(t.time).toLocaleString("pl-PL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+'</small></span><b class="'+((t.side==="BUY"||t.side==="LONG"||t.side==="SHORT")?"positive":(t.pnl||0)>=0?"positive":"negative")+'">'+(t.pnl===null?"—":money(t.pnl))+'</b></div>').join(""):'<div class="empty">Bot czeka na pierwszą transakcję.</div>';
  drawChart();
  updateAnalyst();
 }
 function render(){
  let eq=equity(),diff=eq-START;$("equity").textContent=money(eq);$("pnl").textContent=(diff>=0?"+":"")+money(diff)+" · "+num(diff/START*100)+"%";$("pnl").style.color=diff>=0?"var(--green)":"var(--red)";$("cash").textContent=money(state.cash);$("positions").textContent=Object.keys(state.positions).length;$("tradesCount").textContent=state.trades.length;
  $("coinsGrid").innerHTML=assets.map(a=>{let m=market[a],trend=m&&m.row.e20>m.row.e50;return '<article class="coin"><div class="coinhead"><div class="coinicon">'+assetIcons[a]+'</div><div><div class="coinname">'+assetNames[a]+'</div><div class="coinsym">'+a+' / PLN</div></div></div><div class="price">'+(m?money(m.pricePLN):"—")+'</div><div class="signal '+(m&&trend?"good":m?"bad":"")+'">'+(m?(trend?"EMA trend wzrostowy":"Trend niepotwierdzony")+" · RSI "+num(m.row.rsi,1):"Brak danych")+'</div></article>'}).join("");
- let ps=Object.keys(state.positions);$("positionsList").innerHTML=ps.length?ps.map(a=>{let p=state.positions[a],px=market[a]?market[a].pricePLN:p.entry,pct=(px/p.entry-1)*100;return '<div class="row"><span>'+a+' · '+num(p.qty,6)+' szt.</span><b>'+money(px*p.qty)+'<br><small style="color:'+(pct>=0?'var(--green)':'var(--red)')+'">Wejście '+money(p.entry)+' · wynik '+money((px-p.entry)*p.qty)+' ('+num(pct)+'%) · SL '+money(p.entry*(1-STOP))+' · TP '+money(p.entry*(1+TAKE))+'</small></b></div>'}).join(""):'<div class="empty">Brak otwartych pozycji.</div>';
- let trs=state.trades.slice(0,30);$("history").innerHTML=trs.length?'<table class="trade"><thead><tr><th>Data</th><th>Aktywo</th><th>Typ</th><th>Cena</th><th>Wynik</th></tr></thead><tbody>'+trs.map(t=>'<tr><td>'+new Date(t.time).toLocaleString("pl-PL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+'</td><td>'+t.asset+'</td><td class="'+(t.side==="BUY"?"buy":"sell")+'">'+(t.side==="BUY"?"KUPNO":"SPRZEDAŻ")+'</td><td>'+money(t.price)+'</td><td>'+(t.pnl===null?"—":money(t.pnl))+'</td></tr>').join("")+'</tbody></table>':'<div class="empty">Nie wykonano jeszcze transakcji.</div>';
+ let ps=Object.keys(state.positions);$("positionsList").innerHTML=ps.length?ps.map(a=>{let p=state.positions[a],px=market[a]?market[a].pricePLN:p.entry,dir=p.side==='SHORT'?-1:1,pct=dir*(px/p.entry-1)*100,pnl=dir*(px-p.entry)*p.qty,sl=p.stop_price||p.entry*(1-(p.side==='SHORT'?-STOP:STOP)),tp=p.take_price||p.entry*(1+(p.side==='SHORT'?-TAKE:TAKE));return '<div class="row"><span>'+a+' · '+(p.side||'LONG')+' x'+(p.leverage||1)+' · '+num(p.qty,6)+' szt.</span><b>'+money((p.margin||0)+pnl)+'<br><small style="color:'+(pct>=0?'var(--green)':'var(--red)')+'">Wejście '+money(p.entry)+' · wynik '+money(pnl)+' ('+num(pct)+'%) · SL '+money(sl)+' · TP '+money(tp)+'</small></b></div>'}).join(""):'<div class="empty">Brak otwartych pozycji.</div>';
+ let trs=state.trades.slice(0,30);$("history").innerHTML=trs.length?'<table class="trade"><thead><tr><th>Data</th><th>Aktywo</th><th>Typ</th><th>Cena</th><th>Wynik</th></tr></thead><tbody>'+trs.map(t=>'<tr><td>'+new Date(t.time).toLocaleString("pl-PL",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+'</td><td>'+t.asset+'</td><td class="'+(t.side==="BUY"?"buy":"sell")+'">'+(t.side==="BUY"||t.side==="LONG"?"LONG":t.side==="SHORT"?"SHORT":"ZAMKNIĘCIE")+'</td><td>'+money(t.price)+'</td><td>'+(t.pnl===null?"—":money(t.pnl))+'</td></tr>').join("")+'</tbody></table>':'<div class="empty">Nie wykonano jeszcze transakcji.</div>';
  renderDashboard();
 }
 
