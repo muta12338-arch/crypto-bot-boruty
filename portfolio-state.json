@@ -1,5 +1,5 @@
 {
-  "cash": 1000,
+  "cash": 30000,
   "positions": {},
   "trades": [],
   "last_candles": {
@@ -15,7 +15,7 @@
     "DOT": 1794830400000
   },
   "day": "2026-11-16",
-  "day_start_equity": 1000.0,
+  "day_start_equity": 30000,
   "enabled": true,
   "last_run": "2026-11-16T13:08:09.245770+00:00",
   "prices": {
@@ -82,13 +82,15 @@
       "rsi": 41.05621805792167
     }
   },
-  "equity": 1000.0,
+  "equity": 30000,
   "daily_loss_pct": 0,
-  "last_events": [],
+  "last_events": [
+    "Kapitał paper trading ustawiony na 30 000 PLN; aktywowano profil Active Trading 3.0."
+  ],
   "history": [
     {
       "time": 1794773789073,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 257776.68,
       "ETH": 7241.83,
       "SOL": 284.07,
@@ -102,7 +104,7 @@
     },
     {
       "time": 1794776297588,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 259473.18,
       "ETH": 7275.26,
       "SOL": 286.5,
@@ -116,7 +118,7 @@
     },
     {
       "time": 1794778647080,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 258780.56,
       "ETH": 7232.42,
       "SOL": 286.14,
@@ -130,7 +132,7 @@
     },
     {
       "time": 1794781048719,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 259905.98,
       "ETH": 7280.76,
       "SOL": 288.17,
@@ -144,7 +146,7 @@
     },
     {
       "time": 1794783434629,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 259505.46,
       "ETH": 7271.52,
       "SOL": 288.05,
@@ -158,7 +160,7 @@
     },
     {
       "time": 1794786192362,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 260158.24,
       "ETH": 7315.35,
       "SOL": 289.33,
@@ -172,7 +174,7 @@
     },
     {
       "time": 1794789376368,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 258846.31,
       "ETH": 7250.15,
       "SOL": 286.58,
@@ -186,7 +188,7 @@
     },
     {
       "time": 1794794767656,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 258202.3,
       "ETH": 7225.85,
       "SOL": 285.3,
@@ -200,7 +202,7 @@
     },
     {
       "time": 1794797990806,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 259590.75,
       "ETH": 7269.44,
       "SOL": 287.61,
@@ -214,7 +216,7 @@
     },
     {
       "time": 1794802353787,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 258269.25,
       "ETH": 7241.95,
       "SOL": 285.62,
@@ -228,7 +230,7 @@
     },
     {
       "time": 1794807714621,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 257537.57,
       "ETH": 7226.92,
       "SOL": 284.38,
@@ -242,7 +244,7 @@
     },
     {
       "time": 1794813692719,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 256795.93,
       "ETH": 7198.11,
       "SOL": 282.03,
@@ -256,7 +258,7 @@
     },
     {
       "time": 1794823143117,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 256182.21,
       "ETH": 7157.22,
       "SOL": 281.99,
@@ -270,7 +272,7 @@
     },
     {
       "time": 1794828268376,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 258672.86,
       "ETH": 7241.23,
       "SOL": 286.17,
@@ -284,7 +286,7 @@
     },
     {
       "time": 1794834489245,
-      "equity": 1000.0,
+      "equity": 1000,
       "BTC": 256512.48,
       "ETH": 7201.3,
       "SOL": 283.25,
@@ -296,5 +298,18 @@
       "AVAX": 28.29,
       "DOT": 2.9
     }
-  ]
+  ],
+  "config": {
+    "profile": "active",
+    "initial_capital": 30000,
+    "max_positions": 10,
+    "short_enabled": true,
+    "max_leverage": 3,
+    "stop_loss_pct": 2.5,
+    "take_profit_pct": 4,
+    "risk_per_trade_pct": 1,
+    "daily_loss_limit_pct": 5,
+    "candle_interval_minutes": 15,
+    "paper_trading_only": true
+  }
 }
