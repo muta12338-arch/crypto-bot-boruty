@@ -126,7 +126,7 @@
 </div>
 <div class="toast" id="toast"></div>
 <script>
-const START=30000,FEE=.001,STOP=.025,TAKE=.05,RISK=.01,MAX_POS=10,DAILY_LIMIT=.05;
+const START=30000,FEE=.001,STOP=.025,TAKE=.04,RISK=.01,MAX_POS=10,DAILY_LIMIT=.05;
 const assets=["BTC","ETH","SOL","XRP","ADA","LINK","LTC","DOGE","AVAX","DOT"],symbols={},assetNames={BTC:"Bitcoin",ETH:"Ethereum",SOL:"Solana",XRP:"XRP",ADA:"Cardano",LINK:"Chainlink",LTC:"Litecoin",DOGE:"Dogecoin",AVAX:"Avalanche",DOT:"Polkadot"},assetIcons={BTC:"₿",ETH:"◆",SOL:"◎",XRP:"✕",ADA:"₳",LINK:"⬡",LTC:"Ł",DOGE:"Ð",AVAX:"▲",DOT:"●"},$=id=>document.getElementById(id);
 let state=loadState(),market={},busy=false,autoEnabled=localStorage.getItem("cbboruty_auto")===null?true:localStorage.getItem("cbboruty_auto")==="1";
 function loadState(){try{let x=JSON.parse(localStorage.getItem("cbboruty_state"));if(x&&Number.isFinite(x.cash)&&x.positions&&Array.isArray(x.trades)){x.lastCandles=x.lastCandles||{};return x}}catch(e){}return{cash:START,positions:{},trades:[],lastCandles:{},dayKey:null,dayStartEquity:null}}
@@ -156,7 +156,7 @@ function trade(a,side,price,reason){
  if(side==="SELL"&&p){let gross=p.qty*price,fee=gross*FEE,net=gross-fee,pnl=net-p.qty*p.entry;state.cash+=net;state.trades.unshift({time:Date.now(),asset:a,side:side,price:price,qty:p.qty,pnl:pnl,reason:reason,fee:fee});delete state.positions[a];return true}
  return false;
 }
-function exitCheck(a,row,price,newCandle){let p=state.positions[a];if(!p)return false;if(price<=p.entry*(1-STOP))return trade(a,"SELL",price,"Stop loss -2,5%");if(price>=p.entry*(1+TAKE))return trade(a,"SELL",price,"Take profit +5%");if(newCandle&&(row.e20<row.e50||row.rsi>=75))return trade(a,"SELL",price,"Wyjście techniczne EMA/RSI");return false}
+function exitCheck(a,row,price,newCandle){let p=state.positions[a];if(!p)return false;if(price<=p.entry*(1-STOP))return trade(a,"SELL",price,"Stop loss -2,5%");if(price>=p.entry*(1+TAKE))return trade(a,"SELL",price,"Take profit +4%");if(newCandle&&(row.e20<row.e50||row.rsi>=75))return trade(a,"SELL",price,"Wyjście techniczne EMA/RSI");return false}
 let chartAsset="BTC",chartPeriod=24;
 function closedTrades(){return state.trades.filter(t=>t.side==="SELL"||t.side==="EXIT_LONG"||t.side==="EXIT_SHORT")}
 function realized(){return closedTrades().reduce((s,t)=>s+(t.pnl||0),0)}
@@ -187,8 +187,8 @@ function updateAnalyst(){
   let m=market[a],p=state.positions[a];
   if(!m){rows.push([a,"Brak danych","Notowania nie zostały jeszcze pobrane."]);return}
   let trend=m.row.e20>m.row.e50,r=m.row.rsi;if(trend)bull++;else bear++;
-  let ready=trend&&r>=50&&r<=68;if(ready)entryReady++;
-  let stateText=ready?"Warunki wejścia spełnione":trend?"Trend wzrostowy, RSI poza zakresem":"Trend bez potwierdzenia";
+  let ready=(trend&&r>=45&&r<=72)||(!trend&&r>=28&&r<=55);if(ready)entryReady++;
+  let stateText=ready?"Warunki wejścia spełnione":trend?"Trend wzrostowy, RSI poza zakresem":"Trend spadkowy — możliwy SHORT";
   let explanation="EMA20 "+(trend?"powyżej":"poniżej")+" EMA50; RSI "+num(r,1)+".";
   if(p){let pct=(m.pricePLN/p.entry-1)*100;stateText="Pozycja otwarta · "+(pct>=0?"zysk":"strata")+" "+num(pct)+"%";explanation+=" Stop: "+money(p.entry*(1-STOP))+"; cel: "+money(p.entry*(1+TAKE))+"."}
   rows.push([a,stateText,explanation]);
@@ -198,7 +198,7 @@ function updateAnalyst(){
  else if(blocked){headline="Priorytet: ochrona kapitału. Dzienny limit straty został osiągnięty.";detail="Nowe zakupy są blokowane do kolejnego dnia według zegara urządzenia."}
  else if(slots){headline="Portfel wykorzystuje limit 10 otwartych pozycji. Nowe wejścia są zablokowane.";detail="Najpierw strategia musi zamknąć jedną z obecnych pozycji."}
  else if(entryReady){headline="Co najmniej jedno aktywo spełnia techniczne warunki wejścia.";detail="To sygnał warunkowy, nie gwarancja wzrostu. Wejście następuje przy ocenie nowej zamkniętej świecy 15-minutowej."}
- else if(bull===assets.length){headline="Wszystkie obserwowane aktywa są w trendzie wzrostowym, ale wymagają potwierdzenia RSI.";detail="Strategia czeka na RSI w przedziale 50–68 na zamkniętej świecy godzinowej."}
+ else if(bull===assets.length){headline="Wszystkie obserwowane aktywa są w trendzie wzrostowym, ale wymagają potwierdzenia RSI.";detail="Strategia czeka na RSI w przedziale 45–72 dla LONG lub 28–55 dla SHORT na zamkniętej świecy 15-minutowej."}
  else if(bear===assets.length){headline="Żadne z obserwowanych aktywów nie potwierdza trendu wzrostowego. Najrozsądniej poczekać.";detail="Brak transakcji jest zgodny z zasadą selektywnego handlu."}
  else{headline="Rynek daje mieszane sygnały. Analityk zaleca cierpliwość.";detail="Nie zwiększaj ryzyka tylko po to, aby wymusić transakcję."}
  $("analystSummary").textContent=headline;
