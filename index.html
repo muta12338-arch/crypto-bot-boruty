@@ -140,7 +140,7 @@ async function candles(symbol){let a=await getJSON("https://api.binance.com/api/
 async function ticker(symbol){let x=await getJSON("https://api.binance.com/api/v3/ticker/price?symbol="+symbol);return+x.price}
 function calc(rows){let e20=null,e50=null,ag=null,al=null,prev=null,out=[];rows.forEach(r=>{e20=e20===null?r.close:e20+(r.close-e20)*2/21;e50=e50===null?r.close:e50+(r.close-e50)*2/51;if(prev!==null){let d=r.close-prev,u=Math.max(d,0),dn=Math.max(-d,0);ag=ag===null?u:ag+(u-ag)/14;al=al===null?dn:al+(dn-al)/14}prev=r.close;let rsi=al===null?50:al===0?100:100-100/(1+ag/al);out.push({t:r.t,e20:e20,e50:e50,rsi:rsi})});return out}
 function posValue(){return Object.keys(state.positions).reduce((s,a)=>s+(market[a]?market[a].pricePLN:state.positions[a].entry)*state.positions[a].qty,0)}
-function equity(){return state.cash+posValue()}
+function equity(){return state.cash+Object.keys(state.positions).reduce((s,a)=>{let p=state.positions[a],px=market[a]?market[a].pricePLN:p.entry,dir=p.side==='SHORT'?-1:1;return s+(p.margin||0)+dir*(px-p.entry)*p.qty},0)}
 function dayKey(){let d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()}
 function ensureDay(){let k=dayKey();if(state.dayKey!==k||!Number.isFinite(state.dayStartEquity)){state.dayKey=k;state.dayStartEquity=equity();save()}}
 function dailyLoss(){return state.dayStartEquity>0?Math.max(0,(state.dayStartEquity-equity())/state.dayStartEquity):0}
@@ -209,7 +209,7 @@ function renderDashboard(){
  $("realizedPnl").textContent=(realized()>=0?"+":"")+money(realized());$("realizedPnl").className=realized()>=0?"positive":"negative";
  $("unrealizedPnl").textContent=(unrealized()>=0?"+":"")+money(unrealized());$("unrealizedPnl").className=unrealized()>=0?"positive":"negative";
  $("winRate").textContent=winPct()===null?"—":num(winPct())+"%";$("feesTotal").textContent=money(allFees());
- let eq=equity(),parts=[["Gotówka",Math.max(0,state.cash)],...assets.filter(a=>state.positions[a]).map(a=>[a,(market[a]?market[a].pricePLN:state.positions[a].entry)*state.positions[a].qty])];
+ let eq=equity(),parts=[["Gotówka",Math.max(0,state.cash)],...assets.filter(a=>state.positions[a]).map(a=>{let p=state.positions[a],px=market[a]?market[a].pricePLN:p.entry,dir=p.side==='SHORT'?-1:1;return [a,Math.max(0,(p.margin||0)+dir*(px-p.entry)*p.qty)]})];
  $("allocation").innerHTML=parts.map(p=>'<div class="allocrow"><span class="dashmuted" style="width:70px">'+p[0]+'</span><div class="allocbar"><i style="width:'+Math.max(0,Math.min(100,eq?p[1]/eq*100:0))+'%"></i></div><b>'+num(eq?p[1]/eq*100:0)+'%</b></div>').join("")+'<div class="dashitem"><span>Wartość portfela</span><b>'+money(eq)+'</b></div>';
  let loss=dailyLoss()*100,exposure=eq?posValue()/eq*100:0;
  $("riskPanel").innerHTML='<div class="dashitem"><span>Dzienna strata</span><b class="'+(loss>0?"negative":"positive")+'">'+num(loss)+'% / 3%</b></div><div class="riskline"><i style="width:'+Math.min(100,loss/3*100)+'%"></i></div><div class="dashitem"><span>Ekspozycja w rynku</span><b>'+num(exposure)+'%</b></div><div class="dashitem"><span>Wolne środki</span><b>'+money(state.cash)+'</b></div><div class="dashitem"><span>Wolne miejsca</span><b>'+Math.max(0,MAX_POS-Object.keys(state.positions).length)+' / '+MAX_POS+'</b></div>';
