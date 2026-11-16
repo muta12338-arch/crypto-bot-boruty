@@ -26,8 +26,26 @@ def indicators(closes):
     gains = [max(x, 0) for x in changes]
     losses = [max(-x, 0) for x in changes]
     ag, al = sum(gains)/14, sum(losses)/14
-    rsi = 100 if al == 0 else 100 - 100/(1 + ag/al)
+    rsi = 50 if ag == 0 and al == 0 else 100 if al == 0 else 100 - 100/(1 + ag/al)
     return e20, e50, rsi
+
+def position_pnl(position, price):
+    direction = 1 if position.get('side', 'LONG') == 'LONG' else -1
+    return direction * (price - position['entry']) * position['qty']
+
+def exit_reason(position, price, candle_changed, market):
+    side = position.get('side', 'LONG')
+    stop_price = float(position.get('stop_price', position['entry'] * (1 - STOP if side == 'LONG' else 1 + STOP)))
+    take_price = float(position.get('take_price', position['entry'] * (1 + TAKE if side == 'LONG' else 1 - TAKE)))
+    liq_distance = max(0.01, 1 / float(position.get('leverage', LEVERAGE)) - 0.005)
+    liq_price = position['entry'] * (1 - liq_distance if side == 'LONG' else 1 + liq_distance)
+    if (side == 'LONG' and price <= stop_price) or (side == 'SHORT' and price >= stop_price): return 'Stop Loss'
+    if (side == 'LONG' and price >= take_price) or (side == 'SHORT' and price <= take_price): return 'Take Profit'
+    if (side == 'LONG' and price <= liq_price) or (side == 'SHORT' and price >= liq_price): return 'Symulowana likwidacja'
+    if candle_changed:
+        if side == 'LONG' and (market['ema20'] < market['ema50'] or market['rsi'] >= 78): return 'Wyjście techniczne LONG'
+        if side == 'SHORT' and (market['ema20'] > market['ema50'] or market['rsi'] <= 22): return 'Wyjście techniczne SHORT'
+    return None
 
 def load_state():
     if os.path.exists(STATE_FILE):
@@ -62,10 +80,6 @@ def main():
         e20, e50, rsi = indicators(closes)
         data[asset] = {"price": ticker * fx, "candle": int(closed[-1][0]) * 1000, "ema20": e20, "ema50": e50, "rsi": rsi}
 
-    def position_pnl(p, price):
-        direction = 1 if p.get("side", "LONG") == "LONG" else -1
-        return direction * (price - p["entry"]) * p["qty"]
-
     def equity():
         return float(s["cash"]) + sum(float(p.get("margin", 0)) + position_pnl(p, data.get(a, {}).get("price", p["entry"])) for a, p in s["positions"].items())
 
@@ -80,23 +94,7 @@ def main():
     events = []
     for a, p in list(s["positions"].items()):
         price, side = data[a]["price"], p.get("side", "LONG")
-        stop_price = float(p.get("stop_price", p["entry"] * (1 - STOP if side == "LONG" else 1 + STOP)))
-        take_price = float(p.get("take_price", p["entry"] * (1 + TAKE if side == "LONG" else 1 - TAKE)))
-        liq_distance = max(0.01, 1 / float(p.get("leverage", LEVERAGE)) - 0.005)
-        liq_price = p["entry"] * (1 - liq_distance if side == "LONG" else 1 + liq_distance)
-        reason = None
-        if (side == "LONG" and price <= stop_price) or (side == "SHORT" and price >= stop_price):
-            reason = "Stop Loss"
-        elif (side == "LONG" and price >= take_price) or (side == "SHORT" and price <= take_price):
-            reason = "Take Profit"
-        elif (side == "LONG" and price <= liq_price) or (side == "SHORT" and price >= liq_price):
-            reason = "Symulowana likwidacja"
-        elif data[a]["candle"] != s.get("last_candles", {}).get(a):
-            m = data[a]
-            if side == "LONG" and (m["ema20"] < m["ema50"] or m["rsi"] >= 78):
-                reason = "Wyjście techniczne LONG"
-            elif side == "SHORT" and (m["ema20"] > m["ema50"] or m["rsi"] <= 22):
-                reason = "Wyjście techniczne SHORT"
+        reason = exit_reason(p, price, data[a]["candle"] != s.get("last_candles", {}).get(a), data[a])
         if reason:
             raw_pnl = position_pnl(p, price)
             exit_fee = p["qty"] * price * FEE
